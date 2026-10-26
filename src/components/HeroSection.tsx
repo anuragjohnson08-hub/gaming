@@ -34,8 +34,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
   return (
     <section
+      id="nexus-hero-section"
       aria-label="Featured Performance Overview"
-      className="px-3 sm:px-6 lg:px-8 pt-4 pb-6"
+      className="scroll-mt-36 px-3 sm:px-6 lg:px-8 pt-4 pb-6"
     >
       <div className="nexus-editorial-panel max-w-[1360px] mx-auto rounded-3xl relative overflow-hidden">
         {/* Decorative 3D Pastel Shapes inside Hero Glass Panel for authentic refraction */}
@@ -157,7 +158,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
 
           {/* Right Column: Translucent Glass Lab Bench Telemetry Instrument */}
-          <div className="lg:col-span-6 relative p-4 sm:p-5 lg:p-6 flex flex-col justify-center bg-white/35 border-t lg:border-t-0 lg:border-l border-white/80 overflow-hidden">
+          <div className="lg:col-span-6 relative p-4 sm:p-5 lg:p-6 flex flex-col justify-center bg-white/35 border-t lg:border-t-0 lg:border-l border-white/80 overflow-hidden has-[[data-gpu-fullscreen=true]]:overflow-visible has-[[data-gpu-fullscreen=true]]:z-[9999]">
             {/* Subtle pastel millimeter grid */}
             <div
               className="nexus-anim-ambient absolute inset-0 opacity-45 pointer-events-none"
@@ -168,7 +169,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               }}
             />
 
-            <div className="nexus-anim-hero-hardware relative z-10">
+            <div className="nexus-anim-hero-hardware relative z-10 has-[[data-gpu-fullscreen=true]]:z-[9999]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-mono font-semibold text-[#266D75] truncate">
                   ROG ASTRAL RTX 5090 32GB GDDR7 BTF OC · 3.8-SLOT
@@ -194,7 +195,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   }
                 }}
                 aria-label="Inspect GeForce RTX 5070 12GB Performance Review"
-                className="nexus-editorial-card group relative rounded-2xl p-3 sm:p-3.5 cursor-pointer overflow-hidden"
+                className="nexus-editorial-card group relative rounded-2xl p-3 sm:p-3.5 cursor-pointer overflow-hidden has-[[data-gpu-fullscreen=true]]:overflow-visible has-[[data-gpu-fullscreen=true]]:z-[9999]"
               >
                 <InteractiveGpu3D onInspectFullReview={onInspectFeaturedGpu} />
 

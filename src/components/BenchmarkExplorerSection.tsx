@@ -46,7 +46,7 @@ export const BenchmarkExplorerSection: React.FC<
     <section
       id="nexus-benchmark-section"
       aria-label="Interactive Benchmark Hierarchy"
-      className="nexus-scroll-section px-3 sm:px-6 lg:px-8 pt-12 pb-6"
+      className="nexus-scroll-section scroll-mt-36 px-3 sm:px-6 lg:px-8 pt-12 pb-6"
     >
       <div className="nexus-editorial-panel max-w-[1360px] mx-auto rounded-3xl p-6 sm:p-8 lg:p-10">
         {/* Asymmetric 12-Column Editorial Layout: 4-Col Left Editorial Brief + 8-Col Structured Data Ledger */}

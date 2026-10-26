@@ -21,7 +21,10 @@ export const Footer: React.FC<FooterProps> = ({
   ];
 
   return (
-    <footer className="nexus-scroll-section mt-16 px-3 sm:px-6 lg:px-8 relative z-10">
+    <footer
+      id="nexus-footer-section"
+      className="nexus-scroll-section scroll-mt-36 mt-16 px-3 sm:px-6 lg:px-8 relative z-10"
+    >
       <div className="nexus-editorial-panel max-w-[1360px] mx-auto rounded-3xl px-5 sm:px-8 py-10 text-[#4A5578]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 pb-8 border-b border-[#2E276C]/10">
           {/* Brand Column */}
@@ -48,6 +51,25 @@ export const Footer: React.FC<FooterProps> = ({
                 PUBLICATION
               </h3>
               <ul className="space-y-2">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const el = document.getElementById('nexus-faq-section');
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth' });
+                      } else {
+                        onOpenPolicyModal('NEXUS — Review Methodology & Benchmarking Accuracy');
+                      }
+                    }}
+                    className="text-[#584CE8] hover:underline font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>Benchmarking & Methodology FAQ</span>
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-[#584CE8]/10 text-[#584CE8]">
+                      NEW
+                    </span>
+                  </button>
+                </li>
                 {footerLinks.map((link) => (
                   <li key={link}>
                     <button

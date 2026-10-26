@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import {
   Cpu,
   Expand,
@@ -238,10 +237,8 @@ function createRogBadgeTexture(maxAnisotropy: number): THREE.CanvasTexture {
 }
 
 export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
+  const viewerContainerRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
-  const inlineSlotRef = useRef<HTMLDivElement>(null);
-  const fullscreenSlotRef = useRef<HTMLDivElement>(null);
-  const fullscreenWrapperRef = useRef<HTMLDivElement>(null);
 
   const [explodeFactor, setExplodeFactor] = useState<number>(0); // 0.0 to 1.0
   const [gcHpwrDetached, setGcHpwrDetached] = useState<boolean>(false);
@@ -272,31 +269,26 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
   const handleToggleFullscreen = useCallback(() => {
     setIsFullscreen((prev) => {
       const next = !prev;
-      if (!next && document.fullscreenElement) {
+      if (next) {
+        viewerContainerRef.current?.requestFullscreen?.().catch(() => {
+          // Graceful fallback to CSS viewport takeover + top z-index when iframe blocks native Fullscreen API
+        });
+      } else if (document.fullscreenElement) {
         document.exitFullscreen?.().catch(() => {});
       }
       return next;
     });
   }, []);
 
-  // Sync persistent WebGL canvas node between inline slot and fullscreen portal slot without losing WebGL context
+  // Trigger resize recalculation when Fullscreen or Expanded container state changes
   useEffect(() => {
-    const canvasNode = mountRef.current;
-    if (!canvasNode) return;
+    const raf = window.requestAnimationFrame(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [isFullscreen, isExpandedStudio]);
 
-    if (isFullscreen && fullscreenSlotRef.current) {
-      fullscreenSlotRef.current.appendChild(canvasNode);
-      fullscreenWrapperRef.current?.requestFullscreen?.().catch(() => {
-        // Fallback to full-viewport fixed portal if iframe blocks native OS fullscreen
-      });
-    } else if (!isFullscreen && inlineSlotRef.current) {
-      inlineSlotRef.current.appendChild(canvasNode);
-    }
-
-    window.dispatchEvent(new Event('resize'));
-  }, [isFullscreen]);
-
-  // Listen for Escape key and native fullscreen exit
+  // Listen for Escape key to exit fullscreen
   useEffect(() => {
     if (!isFullscreen) return;
 
@@ -305,17 +297,10 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
         setIsFullscreen(false);
       }
     };
-    const onFullscreenChange = () => {
-      if (!document.fullscreenElement) {
-        // Keep portal active if native fullscreen wasn't entered, or exit if user exited native fullscreen
-      }
-    };
 
     window.addEventListener('keydown', onKeyDown);
-    document.addEventListener('fullscreenchange', onFullscreenChange);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('fullscreenchange', onFullscreenChange);
     };
   }, [isFullscreen]);
 
@@ -1500,73 +1485,88 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
     };
   }, []);
 
-  const renderStudioHud = (inFullscreenMode: boolean) => (
-    <>
-      {/* Top-Left Dimension & BTF Spec Header + Top-Right Expand / Fullscreen Controls */}
-      <div className="absolute top-2.5 left-3 right-3 z-20 pointer-events-none flex items-center justify-between gap-2">
+  return (
+    <div
+      ref={viewerContainerRef}
+      data-testid="interactive-gpu-3d"
+      data-gpu-fullscreen={isFullscreen ? 'true' : 'false'}
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+      onDoubleClick={handleToggleFullscreen}
+      role={isFullscreen ? 'dialog' : 'region'}
+      aria-modal={isFullscreen ? true : undefined}
+      aria-label="Interactive 3D ASUS ROG Astral GeForce RTX 5090 32GB GDDR7 BTF OC Edition"
+      className={
+        isFullscreen
+          ? 'fixed inset-0 top-0 left-0 right-0 bottom-0 z-[9999] w-screen h-screen rounded-none overflow-hidden bg-gradient-to-b from-[#0B0D13] via-[#141822] to-[#080A0F] border-0 shadow-2xl transition-all duration-200'
+          : `relative z-10 w-full ${
+              isExpandedStudio
+                ? 'min-h-[460px] h-[460px] sm:h-[520px]'
+                : 'min-h-[360px] h-[360px] sm:h-[420px] lg:h-[460px]'
+            } rounded-xl overflow-hidden bg-gradient-to-b from-[#0F1117] via-[#161923] to-[#0B0D13] border border-white/15 shadow-inner transition-all duration-200`
+      }
+    >
+      {/* Top-Left Dimension & BTF Spec Header */}
+      <div className="absolute top-3 left-3 pr-36 z-30 pointer-events-none flex items-center gap-2">
         <span className="px-2.5 py-1 rounded-full bg-[#181B24]/95 border border-white/15 font-mono text-[10px] font-bold text-slate-200 tracking-wider truncate">
           ROG ASTRAL RTX 5090 32GB BTF OC · 357.6×149.3×76.0mm (3.8-SLOT)
         </span>
+      </div>
 
-        <div className="pointer-events-auto flex items-center gap-1.5 shrink-0">
-          {!inFullscreenMode && (
-            <button
-              type="button"
-              onClick={() => setIsExpandedStudio((prev) => !prev)}
-              className="p-1.5 rounded-full bg-[#181B24]/95 border border-white/15 text-slate-300 hover:text-white cursor-pointer transition-colors"
-              title={
-                isExpandedStudio
-                  ? 'Standard Card Height'
-                  : 'Expand Card Height'
-              }
-              aria-label={
-                isExpandedStudio
-                  ? 'Standard Card Height'
-                  : 'Expand Card Height'
-              }
-            >
-              {isExpandedStudio ? (
-                <Minimize2 className="w-3.5 h-3.5" />
-              ) : (
-                <Maximize2 className="w-3.5 h-3.5" />
-              )}
-            </button>
-          )}
-
+      {/* Absolutely Positioned 'Fullscreen' Button (takes over viewport & toggles z-index to top) */}
+      <div className="absolute top-3 right-3 z-50 flex items-center gap-1.5">
+        {!isFullscreen && (
           <button
             type="button"
-            data-testid="gpu-3d-fullscreen-btn"
-            onClick={handleToggleFullscreen}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#584CE8] hover:bg-[#483CD6] border border-white/20 text-white font-mono text-[10px] font-bold cursor-pointer shadow-md transition-colors"
+            onClick={() => setIsExpandedStudio((prev) => !prev)}
+            className="p-1.5 rounded-full bg-[#181B24]/95 border border-white/15 text-slate-300 hover:text-white cursor-pointer transition-colors"
             title={
-              inFullscreenMode
-                ? 'Exit Fullscreen (ESC)'
-                : 'View 3D GPU in Fullscreen'
+              isExpandedStudio ? 'Standard Card Height' : 'Expand Card Height'
             }
             aria-label={
-              inFullscreenMode
-                ? 'Exit Fullscreen'
-                : 'View 3D GPU in Fullscreen'
+              isExpandedStudio ? 'Standard Card Height' : 'Expand Card Height'
             }
           >
-            {inFullscreenMode ? (
-              <>
-                <Shrink className="w-3.5 h-3.5" />
-                <span>Exit Fullscreen (ESC)</span>
-              </>
+            {isExpandedStudio ? (
+              <Minimize2 className="w-3.5 h-3.5" />
             ) : (
-              <>
-                <Expand className="w-3.5 h-3.5" />
-                <span>Fullscreen</span>
-              </>
+              <Maximize2 className="w-3.5 h-3.5" />
             )}
           </button>
-        </div>
+        )}
+
+        <button
+          type="button"
+          data-testid="gpu-3d-fullscreen-btn"
+          aria-pressed={isFullscreen}
+          onClick={handleToggleFullscreen}
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#584CE8] hover:bg-[#483CD6] border border-white/25 text-white font-mono text-[10px] font-bold cursor-pointer shadow-lg transition-colors"
+          title={
+            isFullscreen
+              ? 'Exit Fullscreen (ESC)'
+              : 'Fullscreen 3D GPU Viewer'
+          }
+          aria-label={
+            isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'
+          }
+        >
+          {isFullscreen ? (
+            <>
+              <Shrink className="w-3.5 h-3.5" />
+              <span>Exit Fullscreen</span>
+            </>
+          ) : (
+            <>
+              <Expand className="w-3.5 h-3.5" />
+              <span>Fullscreen</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Exploded / Internal Geometry Accuracy Notice */}
       {explodeFactor > 0.1 && !showPartManifest && (
-        <div className="absolute top-10 left-3 z-20 pointer-events-none">
+        <div className="absolute top-11 left-3 z-30 pointer-events-none">
           <span className="px-2.5 py-0.5 rounded bg-[#1E1B4B]/95 border border-indigo-400/30 font-mono text-[10px] text-indigo-200">
             EXPLODED CAD: EXT. VERIFIED · INT. PCB/VRM/GDDR7 APPROXIMATE
           </span>
@@ -1575,7 +1575,7 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
 
       {/* 13-Object CAD Hierarchy & Spec Drawer */}
       {showPartManifest && (
-        <div className="absolute inset-x-3 top-10 bottom-11 z-20 rounded-xl bg-[#0F1117]/95 border border-white/15 p-3 overflow-y-auto text-[11px] font-mono text-slate-200">
+        <div className="absolute inset-x-3 top-11 bottom-12 z-30 rounded-xl bg-[#0F1117]/95 border border-white/15 p-3 overflow-y-auto text-[11px] font-mono text-slate-200">
           <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-white/10">
             <span className="font-bold text-indigo-300">
               13-OBJECT CAD MANIFEST (SCALE: 1u = 100mm)
@@ -1608,7 +1608,7 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
 
       {/* Optional Reference Photo Comparison Overlay (/assets/aistudio/image_4a61f533.png) */}
       {showRefOverlay && (
-        <div className="absolute inset-0 z-10 bg-[#0F1117]/95 flex items-center justify-center p-4 pb-11 pointer-events-none">
+        <div className="absolute inset-0 z-20 bg-[#0F1117]/95 flex items-center justify-center p-4 pb-12 pointer-events-none">
           <img
             src="/assets/aistudio/image_4a61f533.png"
             alt="ASUS ROG Astral GeForce RTX 5090 Reference"
@@ -1618,8 +1618,14 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
         </div>
       )}
 
+      {/* Dedicated Isolated WebGL Canvas Mount Container */}
+      <div
+        ref={mountRef}
+        className="w-full h-full cursor-grab active:cursor-grabbing"
+      />
+
       {/* Unified Bottom Control Dock (Solid dark studio surface, no backdrop-filter over WebGL) */}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#161923] border border-white/15 shadow-lg max-w-[98%] overflow-x-auto">
+      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#161923] border border-white/15 shadow-lg max-w-[98%] overflow-x-auto">
         {(['iso', 'front', 'rear', 'side', 'top'] as CameraPreset[]).map(
           (preset) => (
             <button
@@ -1727,20 +1733,6 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
 
         <button
           type="button"
-          onClick={handleToggleFullscreen}
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-mono text-[9px] sm:text-[10px] font-bold text-slate-300 hover:text-white transition-colors cursor-pointer whitespace-nowrap shrink-0"
-          title={inFullscreenMode ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-        >
-          {inFullscreenMode ? (
-            <Shrink className="w-3 h-3" />
-          ) : (
-            <Expand className="w-3 h-3" />
-          )}
-          <span>{inFullscreenMode ? 'Exit' : 'Full'}</span>
-        </button>
-
-        <button
-          type="button"
           onClick={handleResetView}
           aria-label="Reset 3D GPU View"
           title="Reset 3D View"
@@ -1749,55 +1741,6 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
           <RotateCcw className="w-3 h-3" />
         </button>
       </div>
-    </>
-  );
-
-  return (
-    <>
-      <div
-        data-testid="interactive-gpu-3d"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-        onDoubleClick={handleToggleFullscreen}
-        role="region"
-        aria-label="Interactive 3D ASUS ROG Astral GeForce RTX 5090 32GB GDDR7 BTF OC Edition"
-        className={`relative w-full ${
-          isExpandedStudio
-            ? 'h-96 sm:h-[440px]'
-            : 'h-72 sm:h-80 lg:h-[340px]'
-        } rounded-xl overflow-hidden bg-gradient-to-b from-[#0F1117] via-[#161923] to-[#0B0D13] border border-white/15 shadow-inner transition-all duration-200`}
-      >
-        {!isFullscreen && renderStudioHud(false)}
-
-        {/* Inline Host Slot for the Persistent WebGL Canvas */}
-        <div ref={inlineSlotRef} className="w-full h-full">
-          <div
-            ref={mountRef}
-            className="w-full h-full cursor-grab active:cursor-grabbing"
-          />
-        </div>
-      </div>
-
-      {/* Fullscreen Portal Overlay (100vw × 100vh) */}
-      {isFullscreen &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            ref={fullscreenWrapperRef}
-            data-testid="interactive-gpu-3d-fullscreen"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-            onDoubleClick={handleToggleFullscreen}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Fullscreen 3D ASUS ROG Astral GeForce RTX 5090 32GB GDDR7 BTF OC Studio"
-            className="fixed inset-0 z-[9999] w-screen h-screen bg-gradient-to-b from-[#0B0D13] via-[#141822] to-[#080A0F] overflow-hidden"
-          >
-            {renderStudioHud(true)}
-            <div ref={fullscreenSlotRef} className="w-full h-full" />
-          </div>,
-          document.body
-        )}
-    </>
+    </div>
   );
 };

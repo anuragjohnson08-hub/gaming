@@ -8,6 +8,7 @@ import { BenchmarkExplorerSection } from './components/BenchmarkExplorerSection'
 import { CatalogCard } from './components/CatalogCard';
 import { ComparisonModal } from './components/ComparisonModal';
 import { ComparisonTray } from './components/ComparisonTray';
+import { FaqSection } from './components/FaqSection';
 import { FilterToolbar } from './components/FilterToolbar';
 import { Footer } from './components/Footer';
 import { GameReviewView } from './components/GameReviewView';
@@ -17,6 +18,7 @@ import { HeroSection } from './components/HeroSection';
 import { PastelGlassBackdrop } from './components/PastelGlassBackdrop';
 import { SearchOverlay } from './components/SearchOverlay';
 import { MethodologyModal, SavedItemsDrawer } from './components/SideDrawers';
+import { StickySectionNav } from './components/StickySectionNav';
 import { CATALOG_ITEMS } from './data/catalogData';
 import { CatalogItem, CategoryType, FilterState } from './types/nexus';
 import {
@@ -640,6 +642,17 @@ export default function App() {
           }}
         />
 
+        {/* 2.5. Persistent Sticky In-Page Section Quick Navigation Menu Bar with Active Scroll Spy */}
+        <StickySectionNav
+          onNavigateToSection={(targetId) => {
+            if (selectedItemId) {
+              setSelectedItemId(null);
+            }
+          }}
+          onOpenSearch={() => setSearchOpen(true)}
+          hasOpenDetailView={Boolean(selectedItemId)}
+        />
+
         {/* Main Content Area: Detail Page vs Discovery Storefront */}
         <main>
           {selectedItem ? (
@@ -696,7 +709,7 @@ export default function App() {
               />
 
               {/* 4. Horizontal Filter & Sorting Toolbar */}
-              <div ref={gridRef}>
+              <div ref={gridRef} id="nexus-catalog-section" className="scroll-mt-36">
                 <FilterToolbar
                   filters={filters}
                   onUpdateFilter={handleUpdateFilter}
@@ -771,6 +784,13 @@ export default function App() {
             </div>
           )}
         </main>
+
+        {/* Collapsible Hardware Benchmarking Accuracy & Review Methodology FAQ */}
+        <FaqSection
+          onOpenMethodologyModal={(topic) =>
+            setMethodologyModal({ open: true, topic })
+          }
+        />
       </div>
 
       {/* 7. Refined Footer */}
