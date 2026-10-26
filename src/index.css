@@ -1,0 +1,587 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #CCF2F7;
+    --bg-secondary: #DCE4FC;
+    --bg-card: rgba(255, 255, 255, 0.62);
+    --accent-primary: #584CE8;
+    --accent-secondary: #4338CA;
+    --accent-blue: #266D75;
+    --text-main: #1E293B;
+    --text-display: #2E276C;
+    --text-secondary: #334155;
+    --border-subtle: rgba(0, 0, 0, 0.08);
+    --font-display: 'Cabinet Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #CCF2F7;
+    background-image: linear-gradient(145deg, #B5EEF2 0%, #CCF4F8 28%, #E5F2FC 54%, #DCD7FA 80%, #C8C1F7 100%);
+    background-attachment: fixed;
+    color: #1E293B;
+    letter-spacing: -0.005em;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Cabinet Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  .font-mono, .tabular-nums {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  button {
+    transition:
+      transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  button:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+
+/* ==========================================================================
+   NEXUS PASTEL COLOR GRID + SLEEK HARDWARE LAB & EDITORIAL TYPOGRAPHY SYSTEM
+   Supports live switching between:
+   - data-ui-mode="option1": Complete Editorial UI, Hairline Micro-Borders,
+     Dual-Layer Drop Shadows, Frosted Glass Badges & 1080p/1440p/4K Bars
+   - data-ui-mode="option2": Pure Typography (Cabinet Grotesk + Inter +
+     JetBrains Mono tabular-nums) & Hover Micro-Interactions (scale-[1.01] +
+     glowing hairline borders)
+   ========================================================================== */
+
+.nexus-editorial-nav {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.74) 0%,
+    rgba(255, 255, 255, 0.54) 100%
+  );
+  backdrop-filter: blur(24px) saturate(175%);
+  -webkit-backdrop-filter: blur(24px) saturate(175%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.72) inset,
+    0 10px 30px -5px rgba(30, 41, 59, 0.14);
+}
+
+.nexus-editorial-nav-scrolled {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.86) 0%,
+    rgba(246, 245, 255, 0.74) 100%
+  );
+  backdrop-filter: blur(28px) saturate(185%);
+  -webkit-backdrop-filter: blur(28px) saturate(185%);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.85) inset,
+    0 14px 36px -5px rgba(30, 41, 59, 0.22);
+}
+
+.nexus-editorial-panel {
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.70) 0%,
+    rgba(255, 255, 255, 0.48) 100%
+  );
+  backdrop-filter: blur(26px) saturate(170%);
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.72) inset,
+    0 10px 30px -5px rgba(15, 23, 42, 0.18);
+}
+
+[data-ui-mode="option2"] .nexus-editorial-panel {
+  border: 1.5px solid rgba(255, 255, 255, 0.86);
+  box-shadow:
+    0 20px 48px rgba(75, 65, 175, 0.11),
+    inset 0 1px 1px rgba(255, 255, 255, 0.95);
+}
+
+/* Semi-translucent Frosted Glass Badges for EDITOR'S PICK, DEMO DATA, LAB VERIFIED */
+.nexus-frosted-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.175rem 0.5rem;
+  border-radius: 9999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+    0 2px 6px rgba(15, 23, 42, 0.08);
+  color: #1E293B;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.nexus-frosted-badge-indigo {
+  background: linear-gradient(135deg, rgba(88, 76, 232, 0.16) 0%, rgba(255, 255, 255, 0.82) 100%);
+  border: 1px solid rgba(88, 76, 232, 0.28);
+  color: #2E276C;
+}
+
+.nexus-frosted-badge-teal {
+  background: linear-gradient(135deg, rgba(38, 109, 117, 0.16) 0%, rgba(255, 255, 255, 0.82) 100%);
+  border: 1px solid rgba(38, 109, 117, 0.28);
+  color: #134E4A;
+}
+
+.nexus-frosted-badge-gold {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.20) 0%, rgba(255, 255, 255, 0.88) 100%);
+  border: 1px solid rgba(217, 119, 6, 0.34);
+  color: #92400E;
+}
+
+@keyframes nexusFloatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes nexusFloatMedium {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(1.5deg);
+  }
+}
+
+.nexus-float-slow {
+  animation: nexusFloatSlow 8s ease-in-out infinite;
+}
+
+.nexus-float-medium {
+  animation: nexusFloatMedium 6.5s ease-in-out infinite;
+}
+
+@keyframes nexusCardHoverShake {
+  0% {
+    transform: scale(1.01) translateY(-2px) translateX(0);
+  }
+  25% {
+    transform: scale(1.01) translateY(-2px) translateX(-1.8px);
+  }
+  50% {
+    transform: scale(1.01) translateY(-2px) translateX(1.8px);
+  }
+  75% {
+    transform: scale(1.01) translateY(-2px) translateX(-0.9px);
+  }
+  100% {
+    transform: scale(1.01) translateY(-2px) translateX(0);
+  }
+}
+
+@keyframes nexusHoverShake {
+  0% {
+    transform: translateY(-2px) translateX(0);
+  }
+  20% {
+    transform: translateY(-2px) translateX(-2.5px) rotate(-0.4deg);
+  }
+  40% {
+    transform: translateY(-2px) translateX(2.5px) rotate(0.4deg);
+  }
+  60% {
+    transform: translateY(-2px) translateX(-1.5px) rotate(-0.2deg);
+  }
+  80% {
+    transform: translateY(-2px) translateX(1.5px) rotate(0.2deg);
+  }
+  100% {
+    transform: translateY(-2px) translateX(0) rotate(0deg);
+  }
+}
+
+.nexus-hover-shake {
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+  will-change: transform;
+}
+
+.nexus-hover-shake:hover {
+  animation: nexusHoverShake 380ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Option 1 & Option 2 Card Elevation:
+   - Subtle hairline micro-border (1px solid rgba(0, 0, 0, 0.08))
+   - Dual-layer drop shadow (0 0 0 1px rgba(255,255,255,0.6), 0 10px 30px -5px rgba(0,0,0,0.22))
+   - Hover scale-[1.01] + glowing hairline border */
+.nexus-editorial-card {
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(255, 255, 255, 0.48) 55%,
+    rgba(245, 243, 255, 0.62) 100%
+  );
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.68) inset,
+    0 10px 30px -5px rgba(15, 23, 42, 0.22);
+  transition:
+    border-color 180ms ease,
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 180ms ease,
+    box-shadow 180ms ease;
+  will-change: transform;
+}
+
+.nexus-editorial-card:hover {
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.84) 0%,
+    rgba(255, 255, 255, 0.62) 55%,
+    rgba(246, 244, 255, 0.76) 100%
+  );
+  border-color: rgba(88, 76, 232, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(88, 76, 232, 0.35),
+    0 0 22px rgba(88, 76, 232, 0.22),
+    0 16px 38px -5px rgba(15, 23, 42, 0.26),
+    inset 0 1px 2px rgba(255, 255, 255, 1);
+  transform: scale(1.01);
+  animation: nexusCardHoverShake 360ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.nexus-editorial-well {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(244, 243, 255, 0.56) 100%
+  );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.92);
+}
+
+.nexus-editorial-control {
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #1E293B;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.06),
+    inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  transition:
+    transform 150ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.nexus-editorial-control:hover {
+  background: rgba(255, 255, 255, 0.90);
+  border-color: rgba(88, 76, 232, 0.48);
+  box-shadow:
+    0 0 0 1px rgba(88, 76, 232, 0.18),
+    0 6px 16px rgba(88, 76, 232, 0.14),
+    inset 0 1px 1px rgba(255, 255, 255, 1);
+}
+
+.nexus-editorial-modal {
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(244, 243, 255, 0.78) 100%
+  );
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.82) inset,
+    0 24px 60px -5px rgba(15, 23, 42, 0.28);
+}
+
+.nexus-announcement-bar {
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Frosted bottom dock bar inside cards */
+.nexus-glass-dock {
+  background: linear-gradient(
+    180deg,
+    rgba(244, 242, 255, 0.72) 0%,
+    rgba(235, 232, 253, 0.86) 100%
+  );
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow:
+    0 8px 24px rgba(78, 68, 184, 0.08),
+    inset 0 1px 1px rgba(255, 255, 255, 0.95);
+}
+
+/* Circular indigo active button in dock */
+.nexus-dock-circle-active {
+  background: linear-gradient(135deg, #6357F2 0%, #4E42DC 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 6px 16px rgba(88, 76, 232, 0.36);
+}
+
+/* Circular frosted inactive button in dock */
+.nexus-dock-circle-idle {
+  background: rgba(255, 255, 255, 0.72);
+  color: #584CE8;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.85) inset,
+    0 4px 10px rgba(88, 76, 232, 0.08);
+}
+
+.nexus-dock-circle-idle:hover {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(88, 76, 232, 0.45);
+  color: #4338CA;
+}
+
+@keyframes panelEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes panelExit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+}
+
+.nexus-panel-enter {
+  animation: panelEnter 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.nexus-panel-exit {
+  animation: panelExit 180ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+/* ==========================================================================
+   FILTER DROPDOWN SLIDE DOWN / UP & TEXT FADE IN / OUT ANIMATIONS
+   ========================================================================== */
+
+@keyframes nexusFilterSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scaleY(0.92);
+    max-height: 0;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+    max-height: 360px;
+  }
+}
+
+@keyframes nexusFilterSlideUp {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+    max-height: 360px;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scaleY(0.92);
+    max-height: 0;
+  }
+}
+
+@keyframes nexusFilterTextFadeInDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-7px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nexusFilterTextFadeOutUp {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes nexusFilterTriggerWave {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  35% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  65% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nexus-dropdown-slide-down {
+  transform-origin: top center;
+  overflow: hidden;
+  animation: nexusFilterSlideDown 240ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.nexus-dropdown-slide-up {
+  transform-origin: top center;
+  overflow: hidden;
+  animation: nexusFilterSlideUp 190ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.nexus-filter-text-fade-in {
+  animation: nexusFilterTextFadeInDown 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.nexus-filter-text-fade-out {
+  animation: nexusFilterTextFadeOutUp 160ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.nexus-filter-trigger-pill {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #1E293B;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.06),
+    inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+  will-change: transform;
+}
+
+.nexus-filter-trigger-pill:hover {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(88, 76, 232, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(88, 76, 232, 0.22),
+    0 6px 16px rgba(88, 76, 232, 0.12);
+  transform: translateY(2px);
+}
+
+.nexus-filter-trigger-pill[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: #584CE8;
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px rgba(88, 76, 232, 0.32),
+    0 8px 20px rgba(88, 76, 232, 0.16);
+}
+
+.nexus-filter-trigger-pill:hover .nexus-filter-trigger-label {
+  animation: nexusFilterTriggerWave 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pageExit {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.nexus-page-enter {
+  animation: pageEnter 240ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.nexus-page-exit {
+  animation: pageExit 180ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexus-panel-enter,
+  .nexus-panel-exit,
+  .nexus-page-enter,
+  .nexus-page-exit,
+  .nexus-editorial-card,
+  .nexus-hover-shake,
+  .nexus-dropdown-slide-down,
+  .nexus-dropdown-slide-up,
+  .nexus-filter-text-fade-in,
+  .nexus-filter-text-fade-out,
+  .nexus-filter-trigger-pill,
+  .nexus-filter-trigger-pill:hover .nexus-filter-trigger-label,
+  .nexus-float-slow,
+  .nexus-float-medium {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

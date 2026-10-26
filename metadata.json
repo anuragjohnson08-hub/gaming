@@ -1,0 +1,6 @@
+{
+  "name": "NEXUS — Gaming Intelligence & Hardware Performance Platform",
+  "description": "Independent gaming reviews, real-world FPS benchmarks, and hardware performance intelligence for gamers and PC enthusiasts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
