@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, GitCompare, SlidersHorizontal } from 'lucide-react';
 import { ResolutionKey } from '../types/nexus';
+import { InteractiveGpu3D } from './InteractiveGpu3D';
 
 interface HeroSectionProps {
   gamesCount: number;
@@ -70,9 +71,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </g>
         </svg>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[300px] lg:min-h-[320px]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[340px] lg:min-h-[380px]">
           {/* Left Column: Editorial Lead */}
-          <div className="lg:col-span-7 p-6 sm:p-8 lg:px-10 lg:py-8 flex flex-col justify-between z-10">
+          <div className="lg:col-span-6 p-6 sm:p-8 lg:px-9 lg:py-8 flex flex-col justify-between z-10">
             <div>
               {/* 1. Small eyebrow label */}
               <div className="nexus-anim-hero-eyebrow flex items-center gap-2.5 text-[11px] font-mono font-semibold tracking-[0.18em] text-[#266D75] mb-2.5">
@@ -156,7 +157,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
 
           {/* Right Column: Translucent Glass Lab Bench Telemetry Instrument */}
-          <div className="lg:col-span-5 relative p-5 sm:p-7 flex flex-col justify-center bg-white/35 border-t lg:border-t-0 lg:border-l border-white/80 overflow-hidden">
+          <div className="lg:col-span-6 relative p-4 sm:p-5 lg:p-6 flex flex-col justify-center bg-white/35 border-t lg:border-t-0 lg:border-l border-white/80 overflow-hidden">
             {/* Subtle pastel millimeter grid */}
             <div
               className="nexus-anim-ambient absolute inset-0 opacity-45 pointer-events-none"
@@ -168,9 +169,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             />
 
             <div className="nexus-anim-hero-hardware relative z-10">
-              <div className="flex items-center justify-between mb-2.5">
-                <span className="text-[11px] font-mono font-semibold text-[#266D75]">
-                  FEATURED LAB UNIT · RTX 5070 12GB (DEMO DATA)
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-mono font-semibold text-[#266D75] truncate">
+                  ROG ASTRAL RTX 5090 32GB GDDR7 BTF OC · 3.8-SLOT
                 </span>
                 <button
                   type="button"
@@ -181,7 +182,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 </button>
               </div>
 
-              {/* Studio Hardware Frosted Glass Card */}
+              {/* Studio Hardware Frosted Glass Card with Interactive 3D GPU Model */}
               <div
                 onClick={onInspectFeaturedGpu}
                 role="button"
@@ -193,107 +194,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   }
                 }}
                 aria-label="Inspect GeForce RTX 5070 12GB Performance Review"
-                className="nexus-editorial-card group relative rounded-2xl p-4 cursor-pointer overflow-hidden"
+                className="nexus-editorial-card group relative rounded-2xl p-3 sm:p-3.5 cursor-pointer overflow-hidden"
               >
-                <svg
-                  viewBox="0 0 420 155"
-                  className="w-full h-32 sm:h-36 object-contain relative z-10"
-                  aria-hidden="true"
-                >
-                  <defs>
-                    <linearGradient id="hero-gpu-body" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#F5F4FF" />
-                      <stop offset="50%" stopColor="#DFDCFA" />
-                      <stop offset="100%" stopColor="#C5BEF5" />
-                    </linearGradient>
-                    <linearGradient id="hero-gpu-frame" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#FFFFFF" />
-                      <stop offset="100%" stopColor="#D7ECFA" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Pastel Silver-Lavender Anodized Shroud */}
-                  <rect
-                    x="18"
-                    y="16"
-                    width="384"
-                    height="122"
-                    rx="14"
-                    fill="url(#hero-gpu-body)"
-                    stroke="#FFFFFF"
-                    strokeWidth="2"
-                  />
-
-                  {/* Precision Fin Array */}
-                  {Array.from({ length: 34 }).map((_, idx) => (
-                    <line
-                      key={idx}
-                      x1={32 + idx * 10.6}
-                      y1="22"
-                      x2={32 + idx * 10.6}
-                      y2="132"
-                      stroke="rgba(49, 42, 117, 0.10)"
-                      strokeWidth="2"
-                    />
-                  ))}
-
-                  {/* Geometric Die-Cast Frame */}
-                  <path
-                    d="M 24 22 L 195 22 L 225 132 L 24 132 Z"
-                    fill="url(#hero-gpu-frame)"
-                    fillOpacity="0.72"
-                    stroke="#584CE8"
-                    strokeOpacity="0.45"
-                    strokeWidth="1.4"
-                  />
-                  <path
-                    d="M 215 22 L 396 22 L 396 132 L 185 132 Z"
-                    fill="#EAE7FD"
-                    fillOpacity="0.75"
-                    stroke="#FFFFFF"
-                    strokeWidth="1.4"
-                  />
-
-                  {/* Dual Axial Cooling Fans */}
-                  {[110, 310].map((cx, fIdx) => (
-                    <g key={cx} transform={`translate(${cx}, 77)`}>
-                      <circle
-                        r="44"
-                        fill="#312A75"
-                        fillOpacity="0.9"
-                        stroke="#FFFFFF"
-                        strokeWidth="2"
-                      />
-                      {Array.from({ length: 9 }).map((_, b) => (
-                        <path
-                          key={b}
-                          d="M 0 0 Q 16 -22 35 -16 Q 22 -4 0 0"
-                          fill="#584CE8"
-                          fillOpacity="0.55"
-                          stroke="rgba(255,255,255,0.45)"
-                          strokeWidth="0.9"
-                          transform={`rotate(${b * 40 + fIdx * 20})`}
-                        />
-                      ))}
-                      <circle
-                        r="13"
-                        fill="#FFFFFF"
-                        stroke={fIdx === 0 ? '#584CE8' : '#266D75'}
-                        strokeWidth="2"
-                      />
-                    </g>
-                  ))}
-
-                  {/* Precision Top Accent Line */}
-                  <rect
-                    x="38"
-                    y="16"
-                    width="120"
-                    height="3"
-                    rx="1.5"
-                    fill="#584CE8"
-                  />
-                </svg>
+                <InteractiveGpu3D onInspectFullReview={onInspectFeaturedGpu} />
 
                 {/* Benchmark Telemetry Bar */}
                 <div className="nexus-anim-hero-telemetry">
