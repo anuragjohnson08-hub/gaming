@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Bookmark,
+  Check,
   Cpu,
+  KeyRound,
   LogIn,
   LogOut,
   ShieldCheck,
@@ -12,6 +14,11 @@ import {
 import { CatalogItem } from '../types/nexus';
 import { NexusUser } from '../utils/authLogic';
 import { formatINR } from '../utils/catalogLogic';
+import { executeWithIdempotency, generateIdempotencyKey } from '../utils/idempotency';
+
+/**
+ * 15. ONE-TIME CODE AUTOFILL, 19. IDEMPOTENCY KEYS, 13. HIT SLOP, 14. SAFE AREAS, 16. TABULAR NUMBERS, 17. BALANCED HEADLINES
+ */
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -41,14 +48,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onSelectSavedItem,
   onUpdateRig,
 }) => {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'otp'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [hardwareRig, setHardwareRig] = useState('RTX 5070 12GB · Ryzen 7 9800X3D');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [editingRig, setEditingRig] = useState('');
   const [rigSavedNotice, setRigSavedNotice] = useState(false);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -74,33 +83,79 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     e.preventDefault();
     setErrorMsg(null);
 
-    if (mode === 'login') {
-      const res = onLogin(email, password);
-      if (!res.success) {
-        setErrorMsg(res.error);
-      } else {
-        setPassword('');
+    const idempotencyKey = generateIdempotencyKey('auth_submit', email || 'guest');
+    executeWithIdempotency(idempotencyKey, () => {
+      if (mode === 'login') {
+        const res = onLogin(email, password);
+        if (!res.success) {
+          setErrorMsg(res.error);
+        } else {
+          setPassword('');
+        }
+      } else if (mode === 'signup') {
+        const res = onSignUp({
+          name,
+          email,
+          password,
+          hardwareRig,
+        });
+        if (!res.success) {
+          setErrorMsg(res.error);
+        } else {
+          setPassword('');
+        }
+      } else if (mode === 'otp') {
+        const code = otpDigits.join('');
+        if (code.length < 6) {
+          setErrorMsg('Please enter the complete 6-digit verification code.');
+          return;
+        }
+        // Simulated instant OTP verification
+        const res = onLogin('reviewer@nexus.gg', 'nexus2026');
+        if (!res.success) {
+          setErrorMsg(res.error);
+        }
       }
-    } else {
-      const res = onSignUp({
-        name,
-        email,
-        password,
-        hardwareRig,
-      });
-      if (!res.success) {
-        setErrorMsg(res.error);
-      } else {
-        setPassword('');
-      }
-    }
+    });
   };
 
   const handleQuickDemoLogin = () => {
     setErrorMsg(null);
-    const res = onLogin('reviewer@nexus.gg', 'nexus2026');
-    if (res.success) {
-      setPassword('');
+    const key = generateIdempotencyKey('demo_login', 'reviewer');
+    executeWithIdempotency(key, () => {
+      const res = onLogin('reviewer@nexus.gg', 'nexus2026');
+      if (res.success) {
+        setPassword('');
+      }
+    });
+  };
+
+  const handleOtpChange = (index: number, val: string) => {
+    // Handle multi-character paste
+    if (val.length > 1) {
+      const chars = val.replace(/\D/g, '').slice(0, 6).split('');
+      const updated = [...otpDigits];
+      chars.forEach((c, i) => {
+        if (i < 6) updated[i] = c;
+      });
+      setOtpDigits(updated);
+      otpRefs.current[Math.min(chars.length, 5)]?.focus();
+      return;
+    }
+
+    const digit = val.replace(/\D/g, '');
+    const updated = [...otpDigits];
+    updated[index] = digit;
+    setOtpDigits(updated);
+
+    if (digit && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
     }
   };
 
@@ -109,14 +164,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={currentUser ? 'User Profile and Account' : 'Sign In or Create Account'}
-      className="fixed inset-0 z-50 bg-[#312A75]/25 backdrop-blur-md flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-[#312A75]/25 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 nexus-safe-top nexus-safe-bottom"
     >
-      <div className="nexus-panel-enter nexus-editorial-modal w-full max-w-md rounded-3xl overflow-hidden">
+      <div className="nexus-panel-enter nexus-editorial-modal w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[#2E276C]/10 flex items-center justify-between bg-white/60">
+        <div className="px-5 sm:px-6 py-4 border-b border-[#2E276C]/10 flex items-center justify-between bg-white/65">
           <div className="flex items-center gap-2.5">
             <User className="w-4 h-4 text-[#584CE8]" />
-            <h2 className="font-display text-base font-extrabold text-[#312A75]">
+            <h2 className="font-display text-base font-extrabold text-[#312A75] text-balance">
               {currentUser ? 'NEXUS Member Profile' : 'NEXUS Account Access'}
             </h2>
           </div>
@@ -124,7 +179,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close account modal"
-            className="p-1.5 rounded-full text-[#515E7B] hover:text-[#312A75] hover:bg-white/75 transition-colors cursor-pointer"
+            className="nexus-hit-slop p-1.5 rounded-full text-[#515E7B] hover:text-[#312A75] hover:bg-white/75 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -132,7 +187,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {currentUser ? (
           /* Authenticated User Profile View */
-          <div className="p-6 space-y-5">
+          <div className="p-5 sm:p-6 space-y-5">
             <div className="nexus-editorial-well flex items-center justify-between gap-4 p-4 rounded-2xl !border-[#584CE8]/40">
               <div className="flex items-center gap-3.5 min-w-0">
                 <div className="w-10 h-10 rounded-full nexus-dock-circle-active font-mono font-bold text-sm flex items-center justify-center shrink-0">
@@ -146,7 +201,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <div className="min-w-0">
                   <p
                     data-testid="authenticated-user-name"
-                    className="font-display text-base font-extrabold text-[#312A75] truncate"
+                    className="font-display text-base font-extrabold text-[#312A75] truncate text-balance"
                   >
                     {currentUser.name}
                   </p>
@@ -183,10 +238,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    onUpdateRig(editingRig);
-                    setRigSavedNotice(true);
+                    const key = generateIdempotencyKey('update_rig', currentUser.id);
+                    executeWithIdempotency(key, () => {
+                      onUpdateRig(editingRig);
+                      setRigSavedNotice(true);
+                    });
                   }}
-                  className="nexus-editorial-control px-3.5 py-2 rounded-xl text-xs font-semibold text-[#312A75] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                  className="nexus-hit-slop nexus-editorial-control px-3.5 py-2 rounded-xl text-xs font-semibold text-[#312A75] transition-colors cursor-pointer whitespace-nowrap shrink-0"
                 >
                   {rigSavedNotice ? 'Saved' : 'Update Rig'}
                 </button>
@@ -198,7 +256,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="flex items-center justify-between text-xs font-mono font-bold text-[#515E7B] mb-2.5">
                 <span className="inline-flex items-center gap-1.5">
                   <Bookmark className="w-3.5 h-3.5 text-[#266D75]" />
-                  <span>SAVED TO ACCOUNT ({savedItems.length})</span>
+                  <span>SAVED TO ACCOUNT (<span className="tabular-nums">{savedItems.length}</span>)</span>
                 </span>
                 <span className="text-[10px] text-[#584CE8]">SYNCED</span>
               </div>
@@ -225,10 +283,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           {item.shortTitle}
                         </span>
                         <span className="text-[11px] text-[#515E7B]">
-                          {item.category} · {formatINR(item.priceINR)}
+                          {item.category} · <span className="tabular-nums">{formatINR(item.priceINR)}</span>
                         </span>
                       </div>
-                      <span className="font-mono text-xs text-[#584CE8] font-bold shrink-0">
+                      <span className="font-mono text-xs text-[#584CE8] font-bold shrink-0 tabular-nums">
                         {item.overallScore.toFixed(1)}/10
                       </span>
                     </button>
@@ -245,7 +303,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="button"
                 onClick={onLogout}
-                className="nexus-editorial-control inline-flex items-center gap-2 px-4 py-2 rounded-full hover:!bg-red-500/15 text-[#312A75] hover:text-red-700 hover:!border-red-400/50 text-xs font-semibold transition-colors cursor-pointer"
+                className="nexus-hit-slop nexus-editorial-control inline-flex items-center gap-2 px-4 py-2 rounded-full hover:!bg-red-500/15 text-[#312A75] hover:text-red-700 hover:!border-red-400/50 text-xs font-semibold transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Log Out</span>
@@ -254,12 +312,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         ) : (
           /* Sign In / Sign Up Form View */
-          <div className="p-6">
+          <div className="p-5 sm:p-6">
             {/* Mode Switcher Tabs */}
             <div
               role="tablist"
               aria-label="Authentication Mode"
-              className="nexus-editorial-well grid grid-cols-2 gap-1.5 p-1 rounded-2xl mb-5"
+              className="nexus-editorial-well grid grid-cols-3 gap-1 p-1 rounded-2xl mb-5"
             >
               <button
                 type="button"
@@ -269,7 +327,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   setMode('login');
                   setErrorMsg(null);
                 }}
-                className={`py-2 px-3 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                className={`py-2 px-2.5 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                   mode === 'login'
                     ? 'bg-[#584CE8] text-white shadow-xs'
                     : 'text-[#515E7B] hover:text-[#312A75]'
@@ -287,7 +345,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   setMode('signup');
                   setErrorMsg(null);
                 }}
-                className={`py-2 px-3 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                className={`py-2 px-2.5 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                   mode === 'signup'
                     ? 'bg-[#584CE8] text-white shadow-xs'
                     : 'text-[#515E7B] hover:text-[#312A75]'
@@ -295,6 +353,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>Sign Up</span>
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'otp'}
+                onClick={() => {
+                  setMode('otp');
+                  setErrorMsg(null);
+                }}
+                className={`py-2 px-2.5 rounded-xl text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                  mode === 'otp'
+                    ? 'bg-[#584CE8] text-white shadow-xs'
+                    : 'text-[#515E7B] hover:text-[#312A75]'
+                }`}
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>One-Time Code</span>
               </button>
             </div>
 
@@ -308,86 +384,127 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
 
-            <form onSubmit={handleSubmit} noValidate className="space-y-4">
-              {mode === 'signup' && (
+            {mode === 'otp' ? (
+              /* 15. ONE-TIME CODE (OTP) AUTOFILL INTERFACE */
+              <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                <div className="text-center space-y-1">
+                  <p className="font-display text-sm font-extrabold text-[#312A75]">
+                    Enter 6-Digit Passcode
+                  </p>
+                  <p className="text-xs text-[#515E7B]">
+                    Paste or type verification code sent to your authenticator or SMS.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-center gap-2 py-2">
+                  {otpDigits.map((digit, idx) => (
+                    <input
+                      key={idx}
+                      ref={(el) => {
+                        otpRefs.current[idx] = el;
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete={idx === 0 ? 'one-time-code' : 'off'}
+                      maxLength={6}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(idx, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                      className="w-10 sm:w-12 h-12 text-center text-lg font-mono font-extrabold tabular-nums rounded-xl bg-white/80 border border-[#2E276C]/15 focus:border-[#584CE8] focus:ring-2 focus:ring-[#584CE8]/20 focus:outline-none text-[#312A75]"
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="submit"
+                  className="nexus-hit-slop nexus-dock-circle-active w-full py-2.5 px-4 rounded-full font-semibold text-sm transition-colors cursor-pointer"
+                >
+                  Verify & Sign In
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                {mode === 'signup' && (
+                  <div>
+                    <label
+                      htmlFor="auth-name-input"
+                      className="block text-xs font-mono font-bold text-[#515E7B] mb-1.5"
+                    >
+                      DISPLAY NAME
+                    </label>
+                    <input
+                      id="auth-name-input"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Aarav Sharma"
+                      className="nexus-editorial-well w-full rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#312A75] placeholder-[#515E7B]/60 focus:outline-none focus:border-[#584CE8]"
+                    />
+                  </div>
+                )}
+
                 <div>
                   <label
-                    htmlFor="auth-name-input"
+                    htmlFor="auth-email-input"
                     className="block text-xs font-mono font-bold text-[#515E7B] mb-1.5"
                   >
-                    DISPLAY NAME
+                    EMAIL ADDRESS
                   </label>
                   <input
-                    id="auth-name-input"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Aarav Sharma"
+                    id="auth-email-input"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@nexus.gg"
                     className="nexus-editorial-well w-full rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#312A75] placeholder-[#515E7B]/60 focus:outline-none focus:border-[#584CE8]"
                   />
                 </div>
-              )}
 
-              <div>
-                <label
-                  htmlFor="auth-email-input"
-                  className="block text-xs font-mono font-bold text-[#515E7B] mb-1.5"
-                >
-                  EMAIL ADDRESS
-                </label>
-                <input
-                  id="auth-email-input"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@nexus.gg"
-                  className="nexus-editorial-well w-full rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#312A75] placeholder-[#515E7B]/60 focus:outline-none focus:border-[#584CE8]"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="auth-password-input"
-                  className="block text-xs font-mono font-bold text-[#515E7B] mb-1.5"
-                >
-                  PASSWORD
-                </label>
-                <input
-                  id="auth-password-input"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimum 6 characters"
-                  className="nexus-editorial-well w-full rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#312A75] placeholder-[#515E7B]/60 focus:outline-none focus:border-[#584CE8]"
-                />
-              </div>
-
-              {mode === 'signup' && (
                 <div>
                   <label
-                    htmlFor="auth-rig-input"
+                    htmlFor="auth-password-input"
                     className="block text-xs font-mono font-bold text-[#515E7B] mb-1.5"
                   >
-                    PRIMARY PC / CONSOLE RIG (OPTIONAL)
+                    PASSWORD
                   </label>
                   <input
-                    id="auth-rig-input"
-                    type="text"
-                    value={hardwareRig}
-                    onChange={(e) => setHardwareRig(e.target.value)}
-                    placeholder="e.g. RTX 5070 · Ryzen 7 9800X3D"
-                    className="nexus-editorial-well w-full rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#312A75] placeholder-[#515E7B]/60 focus:outline-none focus:border-[#584CE8]"
+                    id="auth-password-input"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Minimum 6 characters"
+                    className="nexus-editorial-well w-full rounded-xl px-3.5 py-2.5 text-sm font-medium text-[#312A75] placeholder-[#515E7B]/60 focus:outline-none focus:border-[#584CE8]"
                   />
                 </div>
-              )}
 
-              <button
-                type="submit"
-                className="nexus-dock-circle-active w-full py-2.5 px-4 rounded-full font-semibold text-sm transition-colors cursor-pointer"
-              >
-                {mode === 'login' ? 'Log In to NEXUS' : 'Create NEXUS Account'}
-              </button>
-            </form>
+                {mode === 'signup' && (
+                  <div>
+                    <label
+                      htmlFor="auth-rig-input"
+                      className="block text-xs font-mono font-bold text-[#515E7B] mb-1.5"
+                    >
+                      PRIMARY PC / CONSOLE RIG (OPTIONAL)
+                    </label>
+                    <input
+                      id="auth-rig-input"
+                      type="text"
+                      value={hardwareRig}
+                      onChange={(e) => setHardwareRig(e.target.value)}
+                      placeholder="e.g. RTX 5070 · Ryzen 7 9800X3D"
+                      className="nexus-editorial-well w-full rounded-xl px-3.5 py-2.5 text-xs font-medium text-[#312A75] placeholder-[#515E7B]/60 focus:outline-none focus:border-[#584CE8]"
+                    />
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="nexus-hit-slop nexus-dock-circle-active w-full py-2.5 px-4 rounded-full font-semibold text-sm transition-colors cursor-pointer"
+                >
+                  {mode === 'login' ? 'Log In to NEXUS' : 'Create NEXUS Account'}
+                </button>
+              </form>
+            )}
 
             {/* Quick Demo Account Option */}
             <div className="mt-5 pt-4 border-t border-[#2E276C]/10 flex items-center justify-between gap-2">
@@ -398,7 +515,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="button"
                 onClick={handleQuickDemoLogin}
-                className="text-xs font-mono font-bold text-[#584CE8] hover:text-[#312A75] underline underline-offset-4 cursor-pointer whitespace-nowrap shrink-0"
+                className="nexus-hit-slop text-xs font-mono font-bold text-[#584CE8] hover:text-[#312A75] underline underline-offset-4 cursor-pointer whitespace-nowrap shrink-0"
               >
                 Use Demo Account →
               </button>

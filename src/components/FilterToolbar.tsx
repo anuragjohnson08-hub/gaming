@@ -186,12 +186,12 @@ function AnimatedFilterDropdown<T extends string>({
                     : 'nexus-filter-text-fade-in'
                 } ${
                   isSelected
-                    ? 'bg-[#584CE8]/14 text-[#584CE8] font-bold'
-                    : 'text-[#2E276C] hover:bg-white/75 hover:text-[#584CE8]'
+                    ? 'bg-[#6357F2]/25 text-[#A78BFA] font-bold'
+                    : 'text-[#E2E8F0] hover:bg-white/10 hover:text-[#FFFFFF]'
                 }`}
               >
                 <span className="truncate">{optLabel}</span>
-                {isSelected && <Check className="w-3.5 h-3.5 text-[#584CE8] shrink-0" />}
+                {isSelected && <Check className="w-3.5 h-3.5 text-[#A78BFA] shrink-0" />}
               </button>
             );
           })}

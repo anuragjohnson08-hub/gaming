@@ -39,6 +39,9 @@ type CameraPreset = 'iso' | 'front' | 'rear' | 'side' | 'top';
 
 interface InteractiveGpu3DProps {
   onInspectFullReview?: () => void;
+  devWireframe?: boolean;
+  devFanRpmOverride?: number | null;
+  devExplodeOverride?: number | null;
 }
 
 const CAMERA_PRESETS: Record<
@@ -236,7 +239,12 @@ function createRogBadgeTexture(maxAnisotropy: number): THREE.CanvasTexture {
   return tex;
 }
 
-export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
+export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = ({
+  onInspectFullReview,
+  devWireframe = false,
+  devFanRpmOverride = null,
+  devExplodeOverride = null,
+}) => {
   const viewerContainerRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -253,6 +261,10 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
   const gcHpwrDetachedRef = useRef<boolean>(false);
   const turboFanRef = useRef<boolean>(false);
   const activeCamPresetRef = useRef<CameraPreset | null>('iso');
+  const devFanRpmRef = useRef<number | null>(null);
+  const devExplodeRef = useRef<number | null>(null);
+  const devWireframeRef = useRef<boolean>(false);
+  const materialsRef = useRef<THREE.Material[]>([]);
 
   useEffect(() => {
     explodeFactorRef.current = explodeFactor;
@@ -265,6 +277,24 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
   useEffect(() => {
     turboFanRef.current = turboFan;
   }, [turboFan]);
+
+  useEffect(() => {
+    devFanRpmRef.current = devFanRpmOverride;
+  }, [devFanRpmOverride]);
+
+  useEffect(() => {
+    devExplodeRef.current = devExplodeOverride;
+  }, [devExplodeOverride]);
+
+  useEffect(() => {
+    devWireframeRef.current = devWireframe;
+    materialsRef.current.forEach((m) => {
+      if ('wireframe' in m) {
+        (m as THREE.MeshStandardMaterial).wireframe = devWireframe;
+        m.needsUpdate = true;
+      }
+    });
+  }, [devWireframe]);
 
   const handleToggleFullscreen = useCallback(() => {
     setIsFullscreen((prev) => {
@@ -527,6 +557,10 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
     };
     const trackMat = <T extends THREE.Material>(m: T): T => {
       disposableMaterials.push(m);
+      materialsRef.current.push(m);
+      if (devWireframeRef.current && 'wireframe' in m) {
+        (m as unknown as { wireframe: boolean }).wireframe = true;
+      }
       return m;
     };
 
@@ -1306,7 +1340,14 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
       const elapsed = clock.getElapsedTime();
 
       // Spin the 4 Axial-Tech fans (center fan counter-rotates to reduce turbulence)
-      const rpmSpeed = turboFanRef.current ? 17.5 : 5.2;
+      const fanOverride = devFanRpmRef.current;
+      const rpmSpeed =
+        fanOverride !== null
+          ? (fanOverride / 1200) * 5.2
+          : turboFanRef.current
+          ? 17.5
+          : 5.2;
+
       if (fanRotors[0]) fanRotors[0].rotation.z -= delta * rpmSpeed;
       if (fanRotors[1]) fanRotors[1].rotation.z += delta * rpmSpeed;
       if (fanRotors[2]) fanRotors[2].rotation.z -= delta * rpmSpeed;
@@ -1315,7 +1356,10 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
       gpuRoot.position.y = 0.04 + Math.sin(elapsed * 1.6) * 0.022;
 
       // Exploded Assembly Kinematics across all 13 separate objects
-      const e = explodeFactorRef.current;
+      const e =
+        devExplodeRef.current !== null
+          ? devExplodeRef.current
+          : explodeFactorRef.current;
 
       // Front Shroud, Fans, Mounting Rings & RGB move forward (+Z)
       obj03_FanMountingRings.position.z = THREE.MathUtils.damp(
@@ -1481,6 +1525,7 @@ export const InteractiveGpu3D: React.FC<InteractiveGpu3DProps> = () => {
       disposableGeometries.forEach((g) => g.dispose());
       disposableMaterials.forEach((m) => m.dispose());
       disposableTextures.forEach((t) => t.dispose());
+      materialsRef.current = [];
       renderer.dispose();
     };
   }, []);

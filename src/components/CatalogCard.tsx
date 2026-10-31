@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowRight, Bookmark, Check, GitCompare, Star } from 'lucide-react';
+import { motion } from 'motion/react';
 import { CATALOG_ITEMS } from '../data/catalogData';
 import { CatalogItem } from '../types/nexus';
 import { formatINR } from '../utils/catalogLogic';
@@ -8,6 +9,7 @@ import {
   getRigForCatalogHardware,
   HARDWARE_TEST_RIGS,
 } from '../utils/hardwareGameMatrix';
+import { prefetchItem } from '../utils/prefetchManager';
 import { UiUpgradeMode } from './AnnouncementBar';
 import { ArtworkRenderer } from './ArtworkRenderer';
 
@@ -76,13 +78,23 @@ export const CatalogCard: React.FC<CatalogCardProps> = ({
   );
 
   return (
-    <article
+    <motion.article
+      layout
+      initial={{ opacity: 0, y: 16, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      whileHover={{ y: -4 }}
+      transition={{ type: 'spring', stiffness: 360, damping: 28 }}
       data-testid={`catalog-card-${item.id}`}
-      className="nexus-anim-card nexus-editorial-card group rounded-3xl transition-all duration-200 flex flex-col justify-between p-4"
+      onMouseEnter={() => prefetchItem(item.id)}
+      className="nexus-anim-card nexus-editorial-card group rounded-3xl flex flex-col justify-between p-4"
     >
       <div>
-        {/* A. 4:3 Image Container with Pastel Glass Frame */}
+        {/* A. 4:3 Image Container with Pastel Glass Frame & 8. BlurHash Micro-Placeholder */}
         <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-white/55 border border-black/[0.08] shadow-xs mb-3.5">
+          {/* Subtle BlurHash-style animated color shimmer underneath */}
+          <div className="absolute inset-0 nexus-skeleton opacity-40 pointer-events-none" />
+
           <div
             onClick={() => onSelectItem(item)}
             role="button"
@@ -94,7 +106,7 @@ export const CatalogCard: React.FC<CatalogCardProps> = ({
               }
             }}
             aria-label={`Open ${item.title}`}
-            className="w-full h-full cursor-pointer transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+            className="w-full h-full cursor-pointer transition-transform duration-300 ease-out group-hover:scale-[1.02] relative z-0"
           >
             <ArtworkRenderer variant={item.artworkVariant} />
           </div>
@@ -122,7 +134,7 @@ export const CatalogCard: React.FC<CatalogCardProps> = ({
             )}
           </div>
 
-          {/* Top Right Quick Actions: Circular Outlined / Indigo Dock Buttons */}
+          {/* Top Right Quick Actions: 13. Hit Slop & 4. Shortcut Hints */}
           <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10">
             <button
               type="button"
@@ -135,8 +147,8 @@ export const CatalogCard: React.FC<CatalogCardProps> = ({
                   ? `Remove ${item.shortTitle} from comparison`
                   : `Add ${item.shortTitle} to comparison`
               }
-              title={isCompared ? 'Remove from Compare' : 'Add to Compare'}
-              className={`nexus-hover-shake w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+              title={isCompared ? 'Remove from Compare (C)' : 'Add to Compare (C)'}
+              className={`nexus-hit-slop nexus-hover-shake w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
                 isCompared
                   ? 'nexus-dock-circle-active'
                   : 'bg-white/85 text-[#1E293B] border border-black/15 hover:border-[#584CE8] hover:text-[#584CE8]'
@@ -160,8 +172,8 @@ export const CatalogCard: React.FC<CatalogCardProps> = ({
                   ? `Remove ${item.shortTitle} from saved items`
                   : `Save ${item.shortTitle}`
               }
-              title={isSaved ? 'Remove Bookmark' : 'Save Item'}
-              className={`nexus-hover-shake w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+              title={isSaved ? 'Remove Bookmark (S)' : 'Save Item (S)'}
+              className={`nexus-hit-slop nexus-hover-shake w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
                 isSaved
                   ? 'nexus-dock-circle-active'
                   : 'bg-white/85 text-[#1E293B] border border-black/15 hover:border-[#584CE8] hover:text-[#584CE8]'
@@ -291,9 +303,11 @@ export const CatalogCard: React.FC<CatalogCardProps> = ({
                         </span>
                       </div>
                       <div className="h-1.5 w-full rounded-full bg-slate-900/10 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${barColor} transition-all duration-300`}
-                          style={{ width: `${pct}%` }}
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+                          className={`h-full rounded-full ${barColor}`}
                         />
                       </div>
                     </div>
@@ -366,6 +380,6 @@ export const CatalogCard: React.FC<CatalogCardProps> = ({
           </span>
         </button>
       </div>
-    </article>
+    </motion.article>
   );
 };

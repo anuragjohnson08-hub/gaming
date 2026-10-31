@@ -1,15 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Bookmark,
+  ChevronDown,
   Cpu,
   GitCompare,
+  Laptop,
   Menu,
+  Monitor,
   Search,
   User,
   X,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { CategoryType } from '../types/nexus';
 import { NexusUser } from '../utils/authLogic';
+import { useSafeTriangle } from '../utils/useSafeTriangle';
+
+/**
+ * 20. AMAZON SAFE TRIANGLE, 4. SHORTCUT HINTS, 13. HIT SLOP, 14. SAFE AREAS, 16. TABULAR NUMBERS
+ */
 
 export type NavTab = 'Home' | 'Games' | 'Hardware' | 'Benchmarks' | 'Reviews';
 
@@ -54,6 +63,13 @@ export const NexusLogoMark: React.FC<{ className?: string }> = ({
   </svg>
 );
 
+const HARDWARE_CATEGORIES: { name: CategoryType; icon: React.ComponentType<{ className?: string }> }[] = [
+  { name: 'Graphics Cards', icon: Cpu },
+  { name: 'Processors', icon: Cpu },
+  { name: 'Gaming Laptops', icon: Laptop },
+  { name: 'Gaming Monitors', icon: Monitor },
+];
+
 export const Header: React.FC<HeaderProps> = ({
   activeNav,
   onSelectNav,
@@ -65,9 +81,20 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   compareCount,
   savedCount,
+  onQuickCategorySelect,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hardwareMenuOpen, setHardwareMenuOpen] = useState(false);
+  const submenuRef = useRef<HTMLDivElement>(null);
+
+  // 20. Amazon Safe Triangle Hook
+  const { handlePointerLeave, handlePointerEnter } = useSafeTriangle(
+    submenuRef,
+    hardwareMenuOpen,
+    () => setHardwareMenuOpen(false),
+    260
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -80,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
   const navItems: NavTab[] = ['Home', 'Games', 'Hardware', 'Benchmarks', 'Reviews'];
 
   return (
-    <header className="sticky top-2 z-30 px-3 sm:px-6 lg:px-8">
+    <header className="sticky top-2 z-30 px-3 sm:px-6 lg:px-8 nexus-safe-top">
       <div
         className={`nexus-anim-nav-capsule max-w-[1360px] mx-auto rounded-3xl transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isScrolled
@@ -89,33 +116,88 @@ export const Header: React.FC<HeaderProps> = ({
         }`}
       >
         <div className="flex items-center justify-between gap-4">
-          {/* Left Navigation (Desktop) */}
+          {/* Left Navigation (Desktop) with Safe Triangle Dropdown */}
           <nav
             aria-label="Primary Navigation"
-            className="hidden lg:flex items-center gap-6 flex-1"
+            className="hidden lg:flex items-center gap-6 flex-1 relative"
           >
             {navItems.map((item) => {
               const isActive = activeNav === item;
+              const isHardware = item === 'Hardware';
+
               return (
-                <button
+                <div
                   key={item}
-                  type="button"
-                  onClick={() => onSelectNav(item)}
-                  className={`nexus-anim-nav-link group/nav relative text-sm font-semibold transition-colors duration-200 whitespace-nowrap shrink-0 cursor-pointer py-1 focus-visible:outline-2 focus-visible:outline-[#584CE8] ${
-                    isActive
-                      ? 'text-[#2E276C]'
-                      : 'text-[#515E7B] hover:text-[#2E276C]'
-                  }`}
+                  className="relative"
+                  onPointerLeave={isHardware ? handlePointerLeave : undefined}
                 >
-                  {item}
-                  <span
-                    className={`absolute bottom-0 left-0 right-0 h-[2.5px] rounded-full bg-[#584CE8] transition-transform duration-200 origin-left ${
+                  <button
+                    type="button"
+                    onClick={() => onSelectNav(item)}
+                    onPointerEnter={() => {
+                      if (isHardware) {
+                        handlePointerEnter();
+                        setHardwareMenuOpen(true);
+                      } else {
+                        setHardwareMenuOpen(false);
+                      }
+                    }}
+                    className={`nexus-anim-nav-link group/nav relative text-sm font-semibold transition-colors duration-200 whitespace-nowrap shrink-0 cursor-pointer py-1 inline-flex items-center gap-1 focus-visible:outline-2 focus-visible:outline-[#584CE8] ${
                       isActive
-                        ? 'scale-x-100'
-                        : 'scale-x-0 group-hover/nav:scale-x-100'
+                        ? 'text-[#2E276C]'
+                        : 'text-[#515E7B] hover:text-[#2E276C]'
                     }`}
-                  />
-                </button>
+                  >
+                    <span>{item}</span>
+                    {isHardware && (
+                      <ChevronDown className="w-3 h-3 text-[#515E7B] transition-transform group-hover/nav:translate-y-0.5" />
+                    )}
+                    {isActive && (
+                      <motion.span
+                        layoutId="nexus-active-nav-underline"
+                        transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                        className="absolute bottom-0 left-0 right-0 h-[2.5px] rounded-full bg-[#584CE8]"
+                      />
+                    )}
+                  </button>
+
+                  {/* 20. Amazon Safe Triangle Protected Submenu with Motion */}
+                  <AnimatePresence>
+                    {isHardware && hardwareMenuOpen && (
+                      <motion.div
+                        ref={submenuRef}
+                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                        transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+                        onPointerEnter={handlePointerEnter}
+                        onPointerLeave={() => setHardwareMenuOpen(false)}
+                        className="absolute top-full left-0 mt-2 w-56 nexus-editorial-modal rounded-2xl p-2 shadow-xl border border-white/90 bg-white/95 backdrop-blur-xl z-50"
+                      >
+                        <span className="text-[10px] font-mono font-bold text-[#266D75] px-3 py-1.5 block tracking-wider uppercase">
+                          Lab Categories
+                        </span>
+                        {HARDWARE_CATEGORIES.map((cat) => {
+                          const Icon = cat.icon;
+                          return (
+                            <button
+                              key={cat.name}
+                              type="button"
+                              onClick={() => {
+                                onQuickCategorySelect(cat.name);
+                                setHardwareMenuOpen(false);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold text-[#312A75] hover:bg-[#584CE8]/12 hover:text-[#584CE8] transition-colors cursor-pointer"
+                            >
+                              <Icon className="w-3.5 h-3.5 text-[#584CE8]" />
+                              <span>{cat.name}</span>
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               );
             })}
           </nav>
@@ -127,13 +209,13 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={mobileMenuOpen}
-              className="nexus-editorial-control p-2 rounded-full text-[#2E276C] hover:text-[#584CE8] transition-colors"
+              className="nexus-hit-slop nexus-editorial-control p-2 rounded-full text-[#2E276C] hover:text-[#584CE8] transition-colors"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
 
-          {/* Center Brand Identity (Phase 2 Logo Reveal targets) */}
+          {/* Center Brand Identity */}
           <button
             type="button"
             onClick={() => onSelectNav('Home')}
@@ -148,14 +230,14 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </button>
 
-          {/* Right Controls (Phase 3 Action Icons — Circular & Frosted Pill Dock Style) */}
+          {/* Right Controls */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 flex-1">
-            {/* Search Button — Outlined circular/pill icon inspired by top-right search circle in reference */}
+            {/* Search / Command Menu Trigger with Keycap */}
             <button
               type="button"
               onClick={onOpenSearch}
-              aria-label="Search games, hardware, and benchmarks"
-              className="nexus-anim-nav-action nexus-editorial-control inline-flex items-center gap-2 p-2 xl:px-3.5 xl:py-1.5 rounded-full text-xs text-[#2E276C] hover:text-[#584CE8] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              aria-label="Search games, hardware, and benchmarks (⌘K)"
+              className="nexus-anim-nav-action nexus-editorial-control inline-flex items-center gap-2 p-2 xl:px-3.5 xl:py-1.5 rounded-full text-xs text-[#2E276C] hover:text-[#584CE8] transition-colors cursor-pointer whitespace-nowrap shrink-0 group"
             >
               <span className="w-5 h-5 rounded-full border border-[#1E3F49]/65 flex items-center justify-center text-[#1E3F49]">
                 <Search className="w-3 h-3 stroke-[2.2]" />
@@ -163,16 +245,15 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden xl:inline font-medium text-[#4A5578]">
                 Search catalog...
               </span>
-              <kbd className="hidden xl:inline text-[10px] font-mono text-[#584CE8] pl-1 font-semibold">
-                ⌘K
-              </kbd>
+              <kbd className="nexus-kbd hidden xl:inline-flex">⌘K</kbd>
             </button>
 
+            {/* Compare Button */}
             <button
               type="button"
               onClick={onOpenComparison}
               aria-label={`Compare Hardware (${compareCount} selected)`}
-              className={`nexus-anim-nav-action relative p-2 rounded-full transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[#584CE8] ${
+              className={`nexus-hit-slop nexus-anim-nav-action relative p-2 rounded-full transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[#584CE8] ${
                 compareCount > 0 ? 'nexus-dock-circle-active' : 'nexus-dock-circle-idle'
               }`}
               title="Hardware Comparison Table"
@@ -185,11 +266,12 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
+            {/* Saved Items */}
             <button
               type="button"
               onClick={onOpenSaved}
               aria-label={`Saved Items (${savedCount} saved)`}
-              className={`nexus-anim-nav-action relative p-2 rounded-full transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[#584CE8] ${
+              className={`nexus-hit-slop nexus-anim-nav-action relative p-2 rounded-full transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[#584CE8] ${
                 savedCount > 0 ? 'nexus-dock-circle-active' : 'nexus-dock-circle-idle'
               }`}
               title="Saved Reviews & Hardware"
@@ -202,11 +284,12 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
+            {/* Methodology */}
             <button
               type="button"
               onClick={onOpenMethodology}
               aria-label="Testbench Specifications and Methodology"
-              className="nexus-anim-nav-action nexus-dock-circle-idle hidden sm:inline-flex p-2 rounded-full transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[#584CE8]"
+              className="nexus-hit-slop nexus-anim-nav-action nexus-dock-circle-idle hidden sm:inline-flex p-2 rounded-full transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[#584CE8]"
               title="Lab Testbench & Methodology"
             >
               <Cpu className="w-4 h-4" />
@@ -223,7 +306,7 @@ export const Header: React.FC<HeaderProps> = ({
                   : 'Sign In or Sign Up'
               }
               title={currentUser ? `Signed in as ${currentUser.name}` : 'Sign In / Sign Up'}
-              className={`nexus-anim-nav-action inline-flex items-center gap-1.5 rounded-full transition-colors cursor-pointer whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-[#584CE8] ${
+              className={`nexus-hit-slop nexus-anim-nav-action inline-flex items-center gap-1.5 rounded-full transition-colors cursor-pointer whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-[#584CE8] ${
                 currentUser
                   ? 'pl-1.5 pr-3 py-1 nexus-dock-circle-active'
                   : 'nexus-dock-circle-idle p-2 md:px-3 md:py-1.5'
@@ -231,7 +314,7 @@ export const Header: React.FC<HeaderProps> = ({
             >
               {currentUser ? (
                 <>
-                  <span className="w-5 h-5 rounded-full bg-white text-[#584CE8] font-mono text-[10px] font-bold flex items-center justify-center">
+                  <span className="w-5 h-5 rounded-full bg-white text-[#584CE8] font-mono text-[10px] font-bold flex items-center justify-center tabular-nums">
                     {currentUser.name.slice(0, 1).toUpperCase()}
                   </span>
                   <span className="hidden md:inline text-xs font-semibold max-w-[90px] truncate text-white">
@@ -253,7 +336,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="nexus-panel-enter nexus-editorial-modal lg:hidden mt-2 rounded-2xl p-4">
+        <div className="nexus-panel-enter nexus-editorial-modal lg:hidden mt-2 rounded-2xl p-4 shadow-xl">
           <nav aria-label="Mobile Navigation" className="flex flex-col gap-1">
             {navItems.map((item) => {
               const isActive = activeNav === item;

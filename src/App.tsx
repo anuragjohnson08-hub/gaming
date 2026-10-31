@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { RotateCcw } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { AnnouncementBar, UiUpgradeMode } from './components/AnnouncementBar';
 import { AuthModal } from './components/AuthModal';
 import { BenchmarkExplorerSection } from './components/BenchmarkExplorerSection';
@@ -15,10 +16,10 @@ import { GameReviewView } from './components/GameReviewView';
 import { HardwareReviewView } from './components/HardwareReviewView';
 import { Header, NavTab } from './components/Header';
 import { HeroSection } from './components/HeroSection';
-import { PastelGlassBackdrop } from './components/PastelGlassBackdrop';
 import { SearchOverlay } from './components/SearchOverlay';
 import { MethodologyModal, SavedItemsDrawer } from './components/SideDrawers';
 import { StickySectionNav } from './components/StickySectionNav';
+import { ToastAction, UndoToast } from './components/UndoToast';
 import { CATALOG_ITEMS } from './data/catalogData';
 import { CatalogItem, CategoryType, FilterState } from './types/nexus';
 import {
@@ -162,6 +163,7 @@ export default function App() {
   const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
   const [savedDrawerOpen, setSavedDrawerOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [activeToast, setActiveToast] = useState<ToastAction | null>(null);
   const [methodologyModal, setMethodologyModal] = useState<{
     open: boolean;
     topic: string;
@@ -407,17 +409,35 @@ export default function App() {
     };
   }, []);
 
-  // Global Cmd/Ctrl + K shortcut for search
+  // 9. View Transitions API Helper for smooth morphing & navigation
+  const transitionView = (callback: () => void) => {
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      (document as unknown as { startViewTransition: (fn: () => void) => void }).startViewTransition(callback);
+    } else {
+      callback();
+    }
+  };
+
+  // 4. Global keyboard shortcuts (Cmd/Ctrl + K for search, ESC to close review/modal)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setSearchOpen((prev) => !prev);
+      } else if (e.key === 'Escape') {
+        if (searchOpen) setSearchOpen(false);
+        else if (comparisonModalOpen) setComparisonModalOpen(false);
+        else if (savedDrawerOpen) setSavedDrawerOpen(false);
+        else if (authModalOpen) setAuthModalOpen(false);
+        else if (methodologyModal.open) setMethodologyModal((prev) => ({ ...prev, open: false }));
+        else if (selectedItemId) {
+          transitionView(() => setSelectedItemId(null));
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [searchOpen, comparisonModalOpen, savedDrawerOpen, authModalOpen, methodologyModal.open, selectedItemId]);
 
   // Auth Handlers
   const handleLogin = (email: string, password: string) => {
@@ -562,11 +582,24 @@ export default function App() {
     }
   };
 
+  // 2. OPTIMISTIC UPDATES & 5. UNDO TOASTS for Compare Tray
   const handleToggleCompare = (item: CatalogItem) => {
     setCompareIds((prev) => {
-      if (prev.includes(item.id)) {
+      const isCurrentlyCompared = prev.includes(item.id);
+      if (isCurrentlyCompared) {
+        // Optimistic removal with Undo capability
+        setActiveToast({
+          id: `undo_compare_${item.id}`,
+          message: `Removed ${item.shortTitle} from comparison`,
+          undoLabel: 'Undo',
+          onUndo: () => {
+            setCompareIds((curr) => (curr.includes(item.id) ? curr : [...curr, item.id]));
+          },
+        });
         return prev.filter((id) => id !== item.id);
       }
+
+      // Optimistic addition
       if (prev.length >= 4) {
         return [...prev.slice(1), item.id];
       }
@@ -574,17 +607,54 @@ export default function App() {
     });
   };
 
-  const handleToggleSave = (item: CatalogItem) => {
-    setSavedIds((prev) =>
-      prev.includes(item.id)
-        ? prev.filter((id) => id !== item.id)
-        : [...prev, item.id]
-    );
+  const handleClearAllCompare = () => {
+    const backup = [...compareIds];
+    setCompareIds([]);
+    setActiveToast({
+      id: 'undo_clear_compare',
+      message: `Cleared ${backup.length} products from comparison`,
+      undoLabel: 'Undo',
+      onUndo: () => setCompareIds(backup),
+    });
   };
 
+  // 2. OPTIMISTIC UPDATES & 5. UNDO TOASTS for Saved Items
+  const handleToggleSave = (item: CatalogItem) => {
+    setSavedIds((prev) => {
+      const isSaved = prev.includes(item.id);
+      if (isSaved) {
+        // Optimistic removal with Undo capability
+        setActiveToast({
+          id: `undo_save_${item.id}`,
+          message: `Removed ${item.shortTitle} from saved items`,
+          undoLabel: 'Undo',
+          onUndo: () => {
+            setSavedIds((curr) => (curr.includes(item.id) ? curr : [...curr, item.id]));
+          },
+        });
+        return prev.filter((id) => id !== item.id);
+      }
+      return [...prev, item.id];
+    });
+  };
+
+  const handleClearAllSaved = () => {
+    const backup = [...savedIds];
+    setSavedIds([]);
+    setActiveToast({
+      id: 'undo_clear_saved',
+      message: `Cleared ${backup.length} saved items`,
+      undoLabel: 'Undo',
+      onUndo: () => setSavedIds(backup),
+    });
+  };
+
+  // 9. View Transitions API on Item Detail View
   const handleOpenItemDetail = (item: CatalogItem) => {
-    setSelectedItemId(item.id);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    transitionView(() => {
+      setSelectedItemId(item.id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   const handleCompareMatched = (itemsToCompare: CatalogItem[]) => {
@@ -596,11 +666,8 @@ export default function App() {
     <div
       ref={appRootRef}
       data-ui-mode={uiUpgradeMode}
-      className="min-h-screen relative text-[#1E293B] flex flex-col justify-between pb-16 overflow-x-hidden"
+      className="site-wrapper relative text-[#1E293B] flex flex-col justify-between pb-16 overflow-x-hidden"
     >
-      {/* Ambient Pastel Color Grid & 3D Geometric Shapes Backdrop */}
-      <PastelGlassBackdrop />
-
       <div className="relative z-10">
         {/* 1. Thin Announcement Bar with Live Option 1 / Option 2 Switcher */}
         <AnnouncementBar
@@ -655,134 +722,157 @@ export default function App() {
 
         {/* Main Content Area: Detail Page vs Discovery Storefront */}
         <main>
-          {selectedItem ? (
-            selectedItem.itemType === 'game' ? (
-              <GameReviewView
-                item={selectedItem}
-                isCompared={compareIds.includes(selectedItem.id)}
-                isSaved={savedIds.includes(selectedItem.id)}
-                onBack={() => setSelectedItemId(null)}
-                onToggleCompare={handleToggleCompare}
-                onToggleSave={handleToggleSave}
-                onSelectCatalogItem={(id) => {
-                  const found = CATALOG_ITEMS.find((c) => c.id === id);
-                  if (found) handleOpenItemDetail(found);
-                }}
-              />
+          <AnimatePresence mode="wait">
+            {selectedItem ? (
+              <motion.div
+                key={`detail-${selectedItem.id}`}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {selectedItem.itemType === 'game' ? (
+                  <GameReviewView
+                    item={selectedItem}
+                    isCompared={compareIds.includes(selectedItem.id)}
+                    isSaved={savedIds.includes(selectedItem.id)}
+                    onBack={() => setSelectedItemId(null)}
+                    onToggleCompare={handleToggleCompare}
+                    onToggleSave={handleToggleSave}
+                    onSelectCatalogItem={(id) => {
+                      const found = CATALOG_ITEMS.find((c) => c.id === id);
+                      if (found) handleOpenItemDetail(found);
+                    }}
+                  />
+                ) : (
+                  <HardwareReviewView
+                    item={selectedItem}
+                    isCompared={compareIds.includes(selectedItem.id)}
+                    isSaved={savedIds.includes(selectedItem.id)}
+                    onBack={() => setSelectedItemId(null)}
+                    onToggleCompare={handleToggleCompare}
+                    onToggleSave={handleToggleSave}
+                    onOpenComparisonTable={() => setComparisonModalOpen(true)}
+                    onSelectCatalogItem={(id) => {
+                      const found = CATALOG_ITEMS.find((c) => c.id === id);
+                      if (found) handleOpenItemDetail(found);
+                    }}
+                  />
+                )}
+              </motion.div>
             ) : (
-              <HardwareReviewView
-                item={selectedItem}
-                isCompared={compareIds.includes(selectedItem.id)}
-                isSaved={savedIds.includes(selectedItem.id)}
-                onBack={() => setSelectedItemId(null)}
-                onToggleCompare={handleToggleCompare}
-                onToggleSave={handleToggleSave}
-                onOpenComparisonTable={() => setComparisonModalOpen(true)}
-                onSelectCatalogItem={(id) => {
-                  const found = CATALOG_ITEMS.find((c) => c.id === id);
-                  if (found) handleOpenItemDetail(found);
-                }}
-              />
-            )
-          ) : (
-            <div className="nexus-page-enter">
-              {/* 3. Spacious Two-Column Hero Banner */}
-              <HeroSection
-                gamesCount={gamesCount}
-                hardwareCount={hardwareCount}
-                benchmarksCount={benchmarksCount}
-                onExploreReviews={() =>
-                  gridRef.current?.scrollIntoView({ behavior: 'smooth' })
-                }
-                onCompareHardware={() => {
-                  if (compareIds.length === 0) {
-                    setCompareIds(['gpu-rtx-5070', 'gpu-rx-9070-xt']);
+              <motion.div
+                key="storefront-grid"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {/* 3. Spacious Hero Banner */}
+                <HeroSection
+                  gamesCount={gamesCount}
+                  hardwareCount={hardwareCount}
+                  benchmarksCount={benchmarksCount}
+                  onExploreReviews={() =>
+                    gridRef.current?.scrollIntoView({ behavior: 'smooth' })
                   }
-                  setComparisonModalOpen(true);
-                }}
-                onInspectFeaturedGpu={() => {
-                  const rtx5070 = CATALOG_ITEMS.find(
-                    (i) => i.id === 'gpu-rtx-5070'
-                  );
-                  if (rtx5070) handleOpenItemDetail(rtx5070);
-                }}
-              />
-
-              {/* 4. Horizontal Filter & Sorting Toolbar */}
-              <div ref={gridRef} id="nexus-catalog-section" className="scroll-mt-36">
-                <FilterToolbar
-                  filters={filters}
-                  onUpdateFilter={handleUpdateFilter}
-                  onResetFilters={handleResetFilters}
-                  resultsCount={filteredItems.length}
-                  intentBanner={{
-                    summary: searchAnalysis.intent.intentSummary,
-                    canCompare:
-                      searchAnalysis.intent.isComparisonIntent &&
-                      searchAnalysis.matchedItems.length >= 2,
-                    onTriggerCompare: () =>
-                      handleCompareMatched(searchAnalysis.matchedItems),
+                  onCompareHardware={() => {
+                    if (compareIds.length === 0) {
+                      setCompareIds(['gpu-rtx-5070', 'gpu-rx-9070-xt']);
+                    }
+                    setComparisonModalOpen(true);
+                  }}
+                  onInspectFeaturedGpu={() => {
+                    const rtx5070 = CATALOG_ITEMS.find(
+                      (i) => i.id === 'gpu-rtx-5070'
+                    );
+                    if (rtx5070) handleOpenItemDetail(rtx5070);
                   }}
                 />
-              </div>
 
-              {/* 5. Four-Column Gaming & Hardware Review Discovery Grid */}
-              <section
-                aria-label="Gaming Reviews and Hardware Performance Grid"
-                className="px-3 sm:px-6 lg:px-8"
-              >
-                <div className="max-w-[1360px] mx-auto">
-                  {filteredItems.length === 0 ? (
-                    <div className="nexus-editorial-panel rounded-3xl p-12 text-center my-4">
-                      <p className="font-display text-lg font-extrabold text-[#312A75]">
-                        No reviews or hardware match your current filters
-                      </p>
-                      <p className="text-xs sm:text-sm text-[#4A5578] mt-1.5 max-w-md mx-auto font-medium">
-                        Try clearing one of your active category, platform, genre,
-                        or price filters to view our full benchmarked catalog.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={handleResetFilters}
-                        className="nexus-hover-shake nexus-dock-circle-active mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-xs transition-colors cursor-pointer"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Reset All Filters</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      data-testid="discovery-grid"
-                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6"
-                    >
-                      {filteredItems.map((item) => (
-                        <CatalogCard
-                          key={item.id}
-                          item={item}
-                          isCompared={compareIds.includes(item.id)}
-                          isSaved={savedIds.includes(item.id)}
-                          onSelectItem={handleOpenItemDetail}
-                          onToggleCompare={handleToggleCompare}
-                          onToggleSave={handleToggleSave}
-                          uiUpgradeMode={uiUpgradeMode}
-                        />
-                      ))}
-                    </div>
-                  )}
+                {/* 4. Horizontal Filter & Sorting Toolbar */}
+                <div ref={gridRef} id="nexus-catalog-section" className="scroll-mt-36">
+                  <FilterToolbar
+                    filters={filters}
+                    onUpdateFilter={handleUpdateFilter}
+                    onResetFilters={handleResetFilters}
+                    resultsCount={filteredItems.length}
+                    intentBanner={{
+                      summary: searchAnalysis.intent.intentSummary,
+                      canCompare:
+                        searchAnalysis.intent.isComparisonIntent &&
+                        searchAnalysis.matchedItems.length >= 2,
+                      onTriggerCompare: () =>
+                        handleCompareMatched(searchAnalysis.matchedItems),
+                    }}
+                  />
                 </div>
-              </section>
 
-              {/* 6. Interactive Benchmark & Comparison Hierarchy Section */}
-              <BenchmarkExplorerSection
-                items={CATALOG_ITEMS}
-                onSelectItem={handleOpenItemDetail}
-                onCompareGpuPair={(ids) => {
-                  setCompareIds(ids);
-                  setComparisonModalOpen(true);
-                }}
-              />
-            </div>
-          )}
+                {/* 5. Four-Column Gaming & Hardware Review Discovery Grid */}
+                <section
+                  aria-label="Gaming Reviews and Hardware Performance Grid"
+                  className="px-3 sm:px-6 lg:px-8"
+                >
+                  <div className="max-w-[1360px] mx-auto">
+                    {filteredItems.length === 0 ? (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="nexus-editorial-panel rounded-3xl p-12 text-center my-4"
+                      >
+                        <p className="font-display text-lg font-extrabold text-[#312A75]">
+                          No reviews or hardware match your current filters
+                        </p>
+                        <p className="text-xs sm:text-sm text-[#4A5578] mt-1.5 max-w-md mx-auto font-medium">
+                          Try clearing one of your active category, platform, genre,
+                          or price filters to view our full benchmarked catalog.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleResetFilters}
+                          className="nexus-hover-shake nexus-dock-circle-active mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-xs transition-colors cursor-pointer"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Reset All Filters</span>
+                        </button>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        layout
+                        data-testid="discovery-grid"
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6"
+                      >
+                        <AnimatePresence mode="popLayout">
+                          {filteredItems.map((item) => (
+                            <CatalogCard
+                              key={item.id}
+                              item={item}
+                              isCompared={compareIds.includes(item.id)}
+                              isSaved={savedIds.includes(item.id)}
+                              onSelectItem={handleOpenItemDetail}
+                              onToggleCompare={handleToggleCompare}
+                              onToggleSave={handleToggleSave}
+                              uiUpgradeMode={uiUpgradeMode}
+                            />
+                          ))}
+                        </AnimatePresence>
+                      </motion.div>
+                    )}
+                  </div>
+                </section>
+
+                {/* 6. Interactive Benchmark & Comparison Hierarchy Section */}
+                <BenchmarkExplorerSection
+                  items={CATALOG_ITEMS}
+                  onSelectItem={handleOpenItemDetail}
+                  onCompareGpuPair={(ids) => {
+                    setCompareIds(ids);
+                    setComparisonModalOpen(true);
+                  }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </main>
 
         {/* Collapsible Hardware Benchmarking Accuracy & Review Methodology FAQ */}
@@ -808,10 +898,12 @@ export default function App() {
       {/* Persistent Bottom Comparison Tray */}
       <ComparisonTray
         items={comparedItems}
-        onRemoveItem={(id) =>
-          setCompareIds((prev) => prev.filter((item) => item !== id))
-        }
-        onClearAll={() => setCompareIds([])}
+        onRemoveItem={(id) => {
+          const found = CATALOG_ITEMS.find((c) => c.id === id);
+          if (found) handleToggleCompare(found);
+          else setCompareIds((prev) => prev.filter((item) => item !== id));
+        }}
+        onClearAll={handleClearAllCompare}
         onOpenComparison={() => setComparisonModalOpen(true)}
       />
 
@@ -822,11 +914,11 @@ export default function App() {
         selectedItems={comparedItems}
         allItems={CATALOG_ITEMS}
         onToggleCompare={handleToggleCompare}
-        onClearCompare={() => setCompareIds([])}
+        onClearCompare={handleClearAllCompare}
         onSelectDetail={handleOpenItemDetail}
       />
 
-      {/* Instant Search Overlay */}
+      {/* 3. Command Menu & Search Overlay */}
       <SearchOverlay
         isOpen={searchOpen}
         onClose={() => setSearchOpen(false)}
@@ -834,10 +926,27 @@ export default function App() {
         initialQuery={filters.searchQuery}
         onSelectItem={handleOpenItemDetail}
         onApplySearchToGrid={(q) => {
-          setSelectedItemId(null);
+          transitionView(() => setSelectedItemId(null));
           handleUpdateFilter('searchQuery', q);
         }}
         onCompareMatched={handleCompareMatched}
+        onNavigateSection={(secId) => {
+          const el = document.getElementById(secId);
+          el?.scrollIntoView({ behavior: 'smooth' });
+        }}
+        onOpenMethodology={() =>
+          setMethodologyModal({
+            open: true,
+            topic: 'NEXUS Benchmark Database & Lab Methodology',
+          })
+        }
+        onOpenSaved={() => setSavedDrawerOpen(true)}
+        onOpenComparison={() => {
+          if (compareIds.length === 0) {
+            setCompareIds(['gpu-rtx-5070', 'gpu-rx-9070-xt']);
+          }
+          setComparisonModalOpen(true);
+        }}
       />
 
       {/* Saved Items Drawer */}
@@ -846,10 +955,12 @@ export default function App() {
         onClose={() => setSavedDrawerOpen(false)}
         savedItems={savedItems}
         onSelectItem={handleOpenItemDetail}
-        onRemoveSaved={(id) =>
-          setSavedIds((prev) => prev.filter((item) => item !== id))
-        }
-        onClearSaved={() => setSavedIds([])}
+        onRemoveSaved={(id) => {
+          const found = CATALOG_ITEMS.find((c) => c.id === id);
+          if (found) handleToggleSave(found);
+          else setSavedIds((prev) => prev.filter((item) => item !== id));
+        }}
+        onClearSaved={handleClearAllSaved}
       />
 
       {/* User Authentication & Profile Modal */}
@@ -870,6 +981,12 @@ export default function App() {
         isOpen={methodologyModal.open}
         onClose={() => setMethodologyModal((prev) => ({ ...prev, open: false }))}
         activeTopic={methodologyModal.topic}
+      />
+
+      {/* 5. Undo Toasts Notification Host */}
+      <UndoToast
+        toast={activeToast}
+        onDismiss={() => setActiveToast(null)}
       />
     </div>
   );

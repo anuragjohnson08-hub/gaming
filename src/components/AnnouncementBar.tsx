@@ -15,17 +15,17 @@ export const AnnouncementBar: React.FC<AnnouncementBarProps> = ({
   onChangeUiUpgradeMode,
 }) => {
   return (
-    <div className="nexus-announcement-bar min-h-8 py-1 w-full text-[11px] tracking-[0.12em] text-[#1E293B] flex flex-wrap items-center justify-between gap-2 px-3 sm:px-8 select-none z-40 relative">
+    <div className="nexus-announcement-bar min-h-8 py-1 w-full text-[11px] tracking-[0.12em] text-[#E2E8F0] flex flex-wrap items-center justify-between gap-2 px-3 sm:px-8 select-none z-40 relative">
       {/* Left: Live Mode Switcher between Option 1 & Option 2 */}
       <div className="flex items-center gap-1.5 shrink-0">
-        <span className="hidden xl:inline font-mono text-[10px] font-bold text-[#334155] tracking-[0.08em]">
+        <span className="hidden xl:inline font-mono text-[10px] font-bold text-[#94A3B8] tracking-[0.08em]">
           UI MODE:
         </span>
         <div
           role="group"
           aria-label="Switch between Option 1 and Option 2 UI modes"
           data-testid="ui-upgrade-mode-switcher"
-          className="inline-flex items-center gap-1 p-0.5 rounded-full bg-white/75 border border-black/10 shadow-2xs"
+          className="inline-flex items-center gap-1 p-0.5 rounded-full bg-white/10 border border-white/10 shadow-xs"
         >
           <button
             type="button"
@@ -34,8 +34,8 @@ export const AnnouncementBar: React.FC<AnnouncementBarProps> = ({
             onClick={() => onChangeUiUpgradeMode?.('option1')}
             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-mono text-[10px] font-bold tracking-normal transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               uiUpgradeMode === 'option1'
-                ? 'bg-[#584CE8] text-white shadow-xs'
-                : 'text-[#334155] hover:text-[#2E276C]'
+                ? 'bg-[#6357F2] text-white shadow-xs'
+                : 'text-[#94A3B8] hover:text-[#FFFFFF]'
             }`}
             title="Option 1: Complete Editorial UI, Frosted Badges & 1080p/1440p/4K Progress Bars"
           >
@@ -50,8 +50,8 @@ export const AnnouncementBar: React.FC<AnnouncementBarProps> = ({
             onClick={() => onChangeUiUpgradeMode?.('option2')}
             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-mono text-[10px] font-bold tracking-normal transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               uiUpgradeMode === 'option2'
-                ? 'bg-[#266D75] text-white shadow-xs'
-                : 'text-[#334155] hover:text-[#2E276C]'
+                ? 'bg-[#0284C7] text-white shadow-xs'
+                : 'text-[#94A3B8] hover:text-[#FFFFFF]'
             }`}
             title="Option 2: Pure Typography (Cabinet Grotesk + Inter + JetBrains Mono) & Hover Micro-Interactions"
           >
@@ -61,7 +61,7 @@ export const AnnouncementBar: React.FC<AnnouncementBarProps> = ({
         </div>
       </div>
 
-      <p className="mx-auto font-semibold text-center truncate text-[#1E293B] hidden md:block">
+      <p className="mx-auto font-semibold text-center truncate text-[#CBD5E1] hidden md:block">
         INDEPENDENT REVIEWS • REAL-WORLD PERFORMANCE • NO BS
       </p>
 
@@ -69,7 +69,7 @@ export const AnnouncementBar: React.FC<AnnouncementBarProps> = ({
         <button
           type="button"
           onClick={onOpenMethodology}
-          className="inline-flex items-center gap-1.5 text-[10px] font-mono tracking-[0.10em] font-bold text-[#584CE8] hover:text-[#266D75] transition-colors cursor-pointer whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-[#584CE8]"
+          className="inline-flex items-center gap-1.5 text-[10px] font-mono tracking-[0.10em] font-bold text-[#A78BFA] hover:text-[#38BDF8] transition-colors cursor-pointer whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-[#6357F2]"
           aria-label="Open Benchmark Database and Methodology"
         >
           <span>BENCHMARK DATABASE</span>

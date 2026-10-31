@@ -167,14 +167,14 @@ export const StickySectionNav: React.FC<StickySectionNavProps> = ({
         <div
           className={`rounded-2xl transition-all duration-200 flex items-center justify-between gap-3 px-3 py-2 sm:px-4 sm:py-2.5 ${
             isScrolled
-              ? 'bg-white/85 backdrop-blur-xl border border-white/90 shadow-md shadow-[#2E276C]/8'
-              : 'bg-white/65 backdrop-blur-md border border-white/70 shadow-xs'
+              ? 'bg-[#212529]/90 backdrop-blur-xl border border-white/15 shadow-xl shadow-black/40'
+              : 'bg-[#212529]/75 backdrop-blur-md border border-white/10 shadow-lg'
           }`}
         >
           {/* Left: Section Navigation Links (Horizontal scroll on mobile) */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
-            <span className="hidden xl:inline-flex items-center gap-1.5 pr-2 border-r border-[#2E276C]/10 text-[10px] font-mono font-bold tracking-wider text-[#266D75] uppercase whitespace-nowrap">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#584CE8] animate-pulse" />
+            <span className="hidden xl:inline-flex items-center gap-1.5 pr-2 border-r border-white/10 text-[10px] font-mono font-bold tracking-wider text-[#38BDF8] uppercase whitespace-nowrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#6357F2] animate-pulse" />
               <span>NAVIGATE PAGE</span>
             </span>
 
@@ -190,13 +190,13 @@ export const StickySectionNav: React.FC<StickySectionNavProps> = ({
                   aria-current={isActive ? 'true' : undefined}
                   className={`group relative inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full font-mono text-xs transition-all duration-150 cursor-pointer whitespace-nowrap shrink-0 ${
                     isActive
-                      ? 'bg-[#584CE8] text-white font-bold shadow-xs'
-                      : 'text-[#4A5578] hover:text-[#2E276C] hover:bg-white/70 font-semibold'
+                      ? 'bg-[#6357F2] text-white font-bold shadow-md shadow-[#6357F2]/40'
+                      : 'text-[#94A3B8] hover:text-[#FFFFFF] hover:bg-white/10 font-semibold'
                   }`}
                 >
                   <span
                     className={`text-[10px] font-mono tabular-nums ${
-                      isActive ? 'text-indigo-200' : 'text-[#266D75]'
+                      isActive ? 'text-indigo-200' : 'text-[#38BDF8]'
                     }`}
                   >
                     {item.index}
@@ -205,7 +205,7 @@ export const StickySectionNav: React.FC<StickySectionNavProps> = ({
                     className={`w-3.5 h-3.5 ${
                       isActive
                         ? 'text-white'
-                        : 'text-[#584CE8] group-hover:scale-105 transition-transform'
+                        : 'text-[#C4B5FD] group-hover:scale-105 transition-transform'
                     }`}
                   />
                   <span className="hidden sm:inline font-sans">
@@ -222,9 +222,9 @@ export const StickySectionNav: React.FC<StickySectionNavProps> = ({
           {/* Right: Active Section Indicator & Quick Jump to Top */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Active section reading badge */}
-            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#2E276C]/6 border border-[#2E276C]/10 text-[11px] font-mono">
-              <span className="text-[#515E7B]">VIEWING:</span>
-              <span className="font-bold text-[#584CE8] truncate max-w-[120px]">
+            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono">
+              <span className="text-[#94A3B8]">VIEWING:</span>
+              <span className="font-bold text-[#38BDF8] truncate max-w-[120px]">
                 {activeLabel}
               </span>
             </div>
@@ -236,7 +236,7 @@ export const StickySectionNav: React.FC<StickySectionNavProps> = ({
                 onClick={onOpenSearch}
                 aria-label="Quick Search"
                 title="Search Catalog (⌘K)"
-                className="hidden lg:inline-flex items-center gap-1 p-1.5 rounded-full nexus-editorial-control text-[#4A5578] hover:text-[#584CE8] cursor-pointer"
+                className="hidden lg:inline-flex items-center gap-1 p-1.5 rounded-full nexus-editorial-control text-[#94A3B8] hover:text-[#38BDF8] cursor-pointer"
               >
                 <Search className="w-3.5 h-3.5" />
               </button>
@@ -248,7 +248,7 @@ export const StickySectionNav: React.FC<StickySectionNavProps> = ({
                 type="button"
                 onClick={handleScrollToTop}
                 aria-label="Scroll back to top of page"
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#312A75] hover:bg-[#584CE8] text-white font-mono text-xs font-bold transition-all shadow-xs cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#6357F2] hover:bg-[#4F46E5] text-white font-mono text-xs font-bold transition-all shadow-md shadow-[#6357F2]/40 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
               >
                 <ArrowUp className="w-3 h-3" />
                 <span>Top</span>

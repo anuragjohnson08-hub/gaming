@@ -135,9 +135,20 @@ function randomBetween(min: number, max: number): number {
  * random-walk buoyancy physics loop so molten pastel/indigo/aqua lava blobs
  * rise, sink, merge, split, and morph organically behind the frosted glass UI.
  */
-export const PastelGlassBackdrop: React.FC = () => {
+interface PastelGlassBackdropProps {
+  speedMultiplier?: number;
+}
+
+export const PastelGlassBackdrop: React.FC<PastelGlassBackdropProps> = ({
+  speedMultiplier = 1,
+}) => {
   const blobRefs = useRef<(HTMLDivElement | null)[]>([]);
   const specularRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const speedRef = useRef<number>(speedMultiplier);
+
+  useEffect(() => {
+    speedRef.current = speedMultiplier;
+  }, [speedMultiplier]);
 
   useEffect(() => {
     if (
@@ -165,7 +176,8 @@ export const PastelGlassBackdrop: React.FC = () => {
     const tick = () => {
       for (let i = 0; i < states.length; i++) {
         const b = states[i];
-        b.phase += b.phaseSpeed;
+        const sm = speedRef.current;
+        b.phase += b.phaseSpeed * sm;
 
         const dx = b.targetX - b.x;
         const dy = b.targetY - b.y;
@@ -190,8 +202,8 @@ export const PastelGlassBackdrop: React.FC = () => {
         b.vy =
           (b.vy + steerY + Math.cos(b.phase * 0.9 + i * 1.7) * 0.0011) * 0.985;
 
-        b.x += b.vx;
-        b.y += b.vy;
+        b.x += b.vx * sm;
+        b.y += b.vy * sm;
 
         // Soft boundary bounce inside viewport percentage [4..96]
         if (b.x < 4) {
@@ -217,7 +229,7 @@ export const PastelGlassBackdrop: React.FC = () => {
         // Organic lava wax stretching and squishing
         b.scaleX = 1 + Math.sin(b.phase) * 0.22 + Math.cos(b.phase * 0.6) * 0.08;
         b.scaleY = 1 + Math.cos(b.phase) * 0.24 - Math.sin(b.phase * 0.7) * 0.09;
-        b.rotation += b.vRot;
+        b.rotation += b.vRot * sm;
 
         const r1 = Math.round(50 + Math.sin(b.phase * 1.1) * 18);
         const r2 = Math.round(50 + Math.cos(b.phase * 0.9) * 18);
@@ -257,12 +269,12 @@ export const PastelGlassBackdrop: React.FC = () => {
       data-testid="lava-lamp-backdrop"
       className="fixed inset-0 pointer-events-none overflow-hidden select-none z-0"
     >
-      {/* 1. Base Luminous Pastel Aqua-Cyan to Periwinkle-Lavender Chamber */}
+      {/* 1. Base Luminous Dark Slate #212529 Chamber with Rich Radiant Glow */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(145deg, #AEEBF0 0%, #C8F3F7 26%, #E2EEFC 52%, #D7D1FA 78%, #C1B9F7 100%)',
+            'radial-gradient(circle at 50% 10%, #2A3037 0%, #212529 55%, #15181B 100%)',
         }}
       />
 
@@ -309,7 +321,7 @@ export const PastelGlassBackdrop: React.FC = () => {
       </div>
 
       {/* 4. 3D Specular Wax Sheen Layer (Gives Each Lava Globule Depth & Refraction) */}
-      <div className="absolute inset-0 w-full h-full opacity-75 mix-blend-overlay">
+      <div className="absolute inset-0 w-full h-full opacity-65 mix-blend-screen">
         {INITIAL_BLOBS.map((blob, idx) => (
           <div
             key={`lava-specular-${idx}`}
@@ -320,7 +332,7 @@ export const PastelGlassBackdrop: React.FC = () => {
             style={{
               width: `${Math.round(blob.baseRadius * 0.72)}px`,
               height: `${Math.round(blob.baseRadius * 0.72)}px`,
-              background: `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.95) 0%, ${blob.coreHighlight} 48%, transparent 76%)`,
+              background: `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.85) 0%, ${blob.coreHighlight} 48%, transparent 76%)`,
               transform: `translate3d(${blob.x}vw, ${blob.y}vh, 0) translate(-50%, -50%)`,
               borderRadius: '50%',
             }}
@@ -328,15 +340,15 @@ export const PastelGlassBackdrop: React.FC = () => {
         ))}
       </div>
 
-      {/* 5. Architectural Color Grid Overlay (Preserves the Crisp Pastel Grid Reference) */}
+      {/* 5. Architectural Color Grid Overlay (Refined Dark Slate Grid Reference) */}
       <div
-        className="absolute inset-0 opacity-50"
+        className="absolute inset-0 opacity-40"
         style={{
           backgroundImage: `
-            linear-gradient(to right, rgba(255, 255, 255, 0.44) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(255, 255, 255, 0.44) 1px, transparent 1px),
-            linear-gradient(to right, rgba(88, 76, 232, 0.05) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(88, 76, 232, 0.05) 1px, transparent 1px)
+            linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+            linear-gradient(to right, rgba(99, 87, 242, 0.08) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(99, 87, 242, 0.08) 1px, transparent 1px)
           `,
           backgroundSize: '96px 96px, 96px 96px, 24px 24px, 24px 24px',
         }}

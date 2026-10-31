@@ -96,15 +96,24 @@ export const GameReviewView: React.FC<GameReviewViewProps> = ({
 
   return (
     <div className="nexus-page-enter max-w-[1360px] mx-auto px-3 sm:px-6 lg:px-8 py-6">
-      {/* Top Back Navigation & Action Bar (Styled like "← Make It Pop!" header in reference) */}
+      {/* 12. Predictive Back Navigation & Action Bar with 13. Hit Slop & 4. Shortcut Hints */}
       <div className="nexus-editorial-panel rounded-2xl px-5 py-3.5 mb-6 flex flex-wrap items-center justify-between gap-4">
         <button
           type="button"
           onClick={onBack}
-          className="nexus-hover-shake inline-flex items-center gap-2.5 text-sm sm:text-base font-display font-bold text-[#266D75] hover:text-[#312A75] transition-colors cursor-pointer"
+          title="Return to Catalog Discovery Grid (ESC)"
+          className="nexus-hit-slop nexus-hover-shake inline-flex items-center gap-2.5 text-sm sm:text-base font-display font-bold text-[#266D75] hover:text-[#312A75] transition-colors cursor-pointer group"
         >
-          <ArrowLeft className="w-4 h-4 text-[#1E3F49] stroke-[2.4]" />
-          <span>Back to Discovery Grid</span>
+          <span className="w-7 h-7 rounded-full bg-white/80 border border-[#1E3F49]/20 flex items-center justify-center group-hover:-translate-x-0.5 transition-transform">
+            <ArrowLeft className="w-4 h-4 text-[#1E3F49] stroke-[2.4]" />
+          </span>
+          <div className="flex flex-col text-left">
+            <span>Back to Discovery Grid</span>
+            <span className="text-[10px] font-mono text-[#584CE8] font-semibold -mt-0.5">
+              ← Return to 14 benchmarked reviews
+            </span>
+          </div>
+          <kbd className="nexus-kbd ml-1">ESC</kbd>
         </button>
 
         <div className="flex flex-wrap items-center gap-2.5">

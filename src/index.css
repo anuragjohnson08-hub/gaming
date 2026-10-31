@@ -55,6 +55,16 @@
   }
 }
 
+.site-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  background-image: url('./assets/hero-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* Keeps the backdrop static during scroll */
+}
+
 /* ==========================================================================
    NEXUS PASTEL COLOR GRID + SLEEK HARDWARE LAB & EDITORIAL TYPOGRAPHY SYSTEM
    Supports live switching between:
@@ -610,3 +620,116 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* ==========================================================================
+   20 UI ENHANCEMENTS: HIT SLOP, SAFE AREAS, VIEW TRANSITIONS, KEYCAPS & SQUIRCLES
+   ========================================================================== */
+
+/* 13. Hit Slop: Expand interactive touch target to >=44px without altering layout */
+.nexus-hit-slop {
+  position: relative;
+}
+.nexus-hit-slop::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* 14. Safe Area Insets: iPhone Notch & Home Indicator dynamic support */
+.nexus-safe-top {
+  padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+}
+.nexus-safe-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+.nexus-safe-x {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+/* 16. Tabular Numbers: Prevent layout jitter when values/timers change */
+.tabular-nums, .font-mono {
+  font-variant-numeric: tabular-nums lining-nums;
+  -webkit-font-feature-settings: 'tnum' 1, 'lnum' 1;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+/* 17. Balanced Headlines: Prevent typographic orphans */
+h1, h2, h3, h4, .text-balance {
+  text-wrap: balance;
+}
+
+/* 18. Continuous Corners (Squircles): Smooth Apple-like curvature falloff */
+.nexus-squircle-sm {
+  border-radius: 12px;
+  clip-path: margin-box;
+}
+.nexus-squircle-md {
+  border-radius: 18px;
+  clip-path: margin-box;
+}
+.nexus-squircle-lg {
+  border-radius: 26px;
+  clip-path: margin-box;
+}
+.nexus-squircle-full {
+  border-radius: 9999px;
+}
+
+/* 4. Keyboard Shortcut Keycaps */
+.nexus-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  padding: 0.125rem 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: #312A75;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-bottom-width: 1.5px;
+  border-radius: 5px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
+/* 1. Skeleton Loader Shimmer */
+@keyframes nexusShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.nexus-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.85) 50%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  background-size: 200% 100%;
+  animation: nexusShimmer 1.5s infinite ease-in-out;
+}
+
+/* 9. View Transitions API: Smooth crossfade & morph between detail & catalog */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 11. Interruptible Physics Transitions */
+.nexus-interruptible {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 140ms ease,
+              background-color 140ms ease,
+              border-color 140ms ease;
+}
+
