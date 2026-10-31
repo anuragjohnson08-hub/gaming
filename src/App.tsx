@@ -16,6 +16,7 @@ import { GameReviewView } from './components/GameReviewView';
 import { HardwareReviewView } from './components/HardwareReviewView';
 import { Header, NavTab } from './components/Header';
 import { HeroSection } from './components/HeroSection';
+import { ScrollExplodedGpuSection } from './components/ScrollExplodedGpuSection';
 import { SearchOverlay } from './components/SearchOverlay';
 import { MethodologyModal, SavedItemsDrawer } from './components/SideDrawers';
 import { StickySectionNav } from './components/StickySectionNav';
@@ -789,6 +790,9 @@ export default function App() {
                     if (rtx5070) handleOpenItemDetail(rtx5070);
                   }}
                 />
+
+                {/* 3.5. Pinned 200vh GSAP ScrollTrigger 3D GPU Exploded Teardown */}
+                <ScrollExplodedGpuSection />
 
                 {/* 4. Horizontal Filter & Sorting Toolbar */}
                 <div ref={gridRef} id="nexus-catalog-section" className="scroll-mt-36">

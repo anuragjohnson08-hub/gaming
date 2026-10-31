@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowUpRight, BarChart3, GitCompare, SlidersHorizontal } from 'lucide-react';
 import { CatalogItem, ResolutionKey } from '../types/nexus';
 import { formatINR } from '../utils/catalogLogic';
+import { HardwareIntelligenceEngine } from './HardwareIntelligenceEngine';
 
 interface BenchmarkExplorerSectionProps {
   items: CatalogItem[];
@@ -245,6 +246,9 @@ export const BenchmarkExplorerSection: React.FC<
             </div>
           </div>
         </div>
+
+        {/* NEXUS AI Hardware Intelligence Engine */}
+        <HardwareIntelligenceEngine />
       </div>
     </section>
   );

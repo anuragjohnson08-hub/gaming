@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   CategoryType,
   FilterState,
@@ -40,66 +41,20 @@ function AnimatedFilterDropdown<T extends string>({
   options,
   onChange,
 }: AnimatedFilterDropdownProps<T>) {
-  const [isRendered, setIsRendered] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
-  const [displayedValue, setDisplayedValue] = useState<T>(value);
-  const [textPhase, setTextPhase] = useState<'idle' | 'fade-out' | 'fade-in'>('idle');
+  const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const closeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (value === displayedValue) return;
-    setTextPhase('fade-out');
-    const swapTimer = window.setTimeout(() => {
-      setDisplayedValue(value);
-      setTextPhase('fade-in');
-    }, 130);
-    const settleTimer = window.setTimeout(() => {
-      setTextPhase('idle');
-    }, 350);
-    return () => {
-      window.clearTimeout(swapTimer);
-      window.clearTimeout(settleTimer);
-    };
-  }, [value, displayedValue]);
-
-  const openMenu = () => {
-    if (closeTimerRef.current) {
-      window.clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-    setIsClosing(false);
-    setIsRendered(true);
-  };
-
-  const closeMenu = () => {
-    if (!isRendered || isClosing) return;
-    setIsClosing(true);
-    closeTimerRef.current = window.setTimeout(() => {
-      setIsRendered(false);
-      setIsClosing(false);
-      closeTimerRef.current = null;
-    }, 190);
-  };
-
-  const toggleMenu = () => {
-    if (isRendered && !isClosing) {
-      closeMenu();
-    } else {
-      openMenu();
-    }
-  };
-
-  useEffect(() => {
-    if (!isRendered) return;
+    if (!isOpen) return;
     const handlePointerDown = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        closeMenu();
+        setIsOpen(false);
       }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        closeMenu();
+        setIsOpen(false);
       }
     };
     document.addEventListener('mousedown', handlePointerDown);
@@ -108,95 +63,151 @@ function AnimatedFilterDropdown<T extends string>({
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isRendered, isClosing]);
-
-  useEffect(() => {
-    return () => {
-      if (closeTimerRef.current) {
-        window.clearTimeout(closeTimerRef.current);
-      }
-    };
-  }, []);
+  }, [isOpen]);
 
   const isActive = value !== 'All';
-  const isOpen = isRendered && !isClosing;
-  const triggerText =
-    displayedValue === 'All' ? `${prefixLabel}: All` : displayedValue;
+  const triggerText = value === 'All' ? `${prefixLabel}: All` : value;
 
   return (
     <div ref={containerRef} className="relative inline-block">
-      <button
+      <motion.button
         id={id}
         type="button"
         aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        onClick={toggleMenu}
-        className={`nexus-filter-trigger-pill inline-flex items-center justify-between gap-2 text-xs rounded-full px-3.5 py-2 cursor-pointer text-[#1E293B] font-semibold focus:outline-none focus:border-[#584CE8] ${
-          isActive ? '!border-[#584CE8] !bg-[#584CE8]/14 text-[#584CE8] font-bold' : ''
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        whileHover={{ scale: 1.04, y: -2 }}
+        whileTap={{ scale: 0.97 }}
+        transition={{ type: 'spring', stiffness: 440, damping: 24 }}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`nexus-filter-trigger-pill inline-flex items-center justify-between gap-2 text-xs rounded-full px-3.5 py-2 cursor-pointer font-semibold focus:outline-none focus:border-[#584CE8] ${
+          isActive
+            ? '!border-[#584CE8] !bg-[#584CE8]/15 !text-[#312A75] font-bold shadow-xs'
+            : 'text-[#1E293B]'
         }`}
       >
-        <span className="overflow-hidden inline-flex items-center">
-          <span
-            className={`nexus-filter-trigger-label inline-block whitespace-nowrap ${
-              textPhase === 'fade-out'
-                ? 'nexus-filter-text-fade-out'
-                : textPhase === 'fade-in'
-                ? 'nexus-filter-text-fade-in'
-                : ''
-            }`}
-          >
-            {triggerText}
-          </span>
-        </span>
-        <ChevronDown
-          className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
-            isActive ? 'text-[#584CE8]' : 'text-slate-600'
-          } ${isOpen ? 'rotate-180 text-[#584CE8]' : 'rotate-0'}`}
-        />
-      </button>
-
-      {isRendered && (
-        <div
-          role="listbox"
-          aria-label={`${ariaLabel} options`}
-          className={`nexus-editorial-modal absolute left-0 top-full mt-2 min-w-[205px] z-40 rounded-2xl py-1.5 ${
-            isClosing ? 'nexus-dropdown-slide-up' : 'nexus-dropdown-slide-down'
-          }`}
-        >
-          {options.map((opt, idx) => {
-            const isSelected = opt === value;
-            const optLabel = opt === 'All' ? `${prefixLabel}: All` : opt;
-            return (
-              <button
-                key={opt}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => {
-                  onChange(opt);
-                  closeMenu();
+        <span className="relative overflow-hidden inline-grid items-center min-h-[18px]">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={triggerText}
+              initial={{ opacity: 0, y: 8, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.92 }}
+              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+              className="relative inline-grid items-center"
+            >
+              {/* Layer 1: Pops out upward on hover, pops back in on leave */}
+              <motion.span
+                animate={{
+                  y: isHovered ? '-115%' : '0%',
+                  scale: isHovered ? 0.9 : 1,
+                  opacity: isHovered ? 0 : 1,
                 }}
-                style={{
-                  animationDelay: isClosing ? '0ms' : `${idx * 22}ms`,
-                }}
-                className={`w-full flex items-center justify-between gap-3 px-3.5 py-2 text-left text-xs transition-colors cursor-pointer ${
-                  isClosing
-                    ? 'nexus-filter-text-fade-out'
-                    : 'nexus-filter-text-fade-in'
-                } ${
-                  isSelected
-                    ? 'bg-[#6357F2]/25 text-[#A78BFA] font-bold'
-                    : 'text-[#E2E8F0] hover:bg-white/10 hover:text-[#FFFFFF]'
-                }`}
+                transition={{ type: 'spring', stiffness: 460, damping: 28 }}
+                className="nexus-filter-trigger-label col-start-1 row-start-1 inline-block whitespace-nowrap"
               >
-                <span className="truncate">{optLabel}</span>
-                {isSelected && <Check className="w-3.5 h-3.5 text-[#A78BFA] shrink-0" />}
-              </button>
-            );
-          })}
-        </div>
-      )}
+                {triggerText}
+              </motion.span>
+
+              {/* Layer 2: Pops in from below with a spring scale boost on hover, pops out on leave */}
+              <motion.span
+                aria-hidden="true"
+                animate={{
+                  y: isHovered ? '0%' : '115%',
+                  scale: isHovered ? 1.05 : 0.9,
+                  opacity: isHovered ? 1 : 0,
+                }}
+                transition={{ type: 'spring', stiffness: 460, damping: 26 }}
+                className="col-start-1 row-start-1 inline-block whitespace-nowrap text-[#584CE8] font-bold"
+              >
+                {triggerText}
+              </motion.span>
+            </motion.span>
+          </AnimatePresence>
+        </span>
+
+        <motion.span
+          animate={{
+            rotate: isOpen ? 180 : 0,
+            scale: isHovered ? 1.15 : 1,
+          }}
+          transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+          className="inline-flex items-center justify-center shrink-0"
+        >
+          <ChevronDown
+            className={`w-3.5 h-3.5 ${
+              isActive || isOpen || isHovered ? 'text-[#584CE8]' : 'text-slate-600'
+            }`}
+          />
+        </motion.span>
+      </motion.button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            role="listbox"
+            aria-label={`${ariaLabel} options`}
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 440, damping: 30, mass: 0.7 }}
+            style={{ transformOrigin: 'top left' }}
+            className="absolute left-0 top-full mt-2 min-w-[220px] z-50 rounded-2xl p-1.5 bg-white/96 backdrop-blur-2xl border border-[#2E276C]/15 shadow-[0_22px_48px_-8px_rgba(30,41,59,0.28),0_0_0_1px_rgba(255,255,255,0.95)_inset] overflow-hidden"
+          >
+            <div className="px-3 py-1.5 border-b border-[#2E276C]/10 mb-1 flex items-center justify-between">
+              <span className="text-[10px] font-mono font-bold tracking-[0.14em] text-[#266D75] uppercase">
+                {prefixLabel} Filter
+              </span>
+              <span className="text-[10px] font-mono text-[#515E7B] tabular-nums">
+                {options.length} options
+              </span>
+            </div>
+
+            <div className="space-y-0.5">
+              {options.map((opt, idx) => {
+                const isSelected = opt === value;
+                const optLabel = opt === 'All' ? `${prefixLabel}: All` : opt;
+                return (
+                  <motion.button
+                    key={opt}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    whileHover={{ scale: 1.03, x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 460,
+                      damping: 26,
+                      delay: idx * 0.015,
+                    }}
+                    onClick={() => {
+                      onChange(opt);
+                      setIsOpen(false);
+                    }}
+                    className={`group/opt w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-left text-xs transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#584CE8] text-white font-bold shadow-xs'
+                        : 'text-[#1E293B] font-semibold hover:bg-[#584CE8]/12 hover:text-[#584CE8]'
+                    }`}
+                  >
+                    <span className="truncate inline-block transition-transform duration-150 ease-out group-hover/opt:scale-[1.04] origin-left">
+                      {optLabel}
+                    </span>
+                    {isSelected && (
+                      <Check className="w-3.5 h-3.5 text-white shrink-0 stroke-[2.5]" />
+                    )}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
